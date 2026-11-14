@@ -10,7 +10,7 @@ type Anim = 'idle' | 'equip' | 'reload' | 'inspect' | 'slash' | 'stab' | 'throw'
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const seg = (t: number, a: number, b: number) => smooth(clamp((t - a) / (b - a), 0, 1));
 
-interface Arm { group: THREE.Group; fore: THREE.Mesh; sleeve: THREE.Mesh; hand: THREE.Mesh }
+interface Arm { group: THREE.Group; fore: THREE.Mesh; sleeve: THREE.Mesh; hand: THREE.Group }
 
 export class Viewmodel {
   scene = new THREE.Scene();
@@ -67,7 +67,20 @@ export class Viewmodel {
     const sleeveM = new THREE.MeshStandardMaterial({ color: 0x2b3447, roughness: 0.9, map: fabricTex() });
     const fore = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.038, 1, 10).translate(0, 0.5, 0), skinM);
     const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 1, 10).translate(0, 0.5, 0), sleeveM);
-    const hand = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.09), skinM);
+    const hand = new THREE.Group();
+    const palm = new THREE.Mesh(new THREE.SphereGeometry(0.031, 14, 10), skinM);
+    palm.scale.set(0.9, 0.62, 1.18);
+    hand.add(palm);
+    for (let i = 0; i < 4; i++) {
+      const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.0065, 0.027, 3, 7), skinM);
+      finger.rotation.x = Math.PI / 2;
+      finger.position.set(-0.019 + i * 0.0125, -0.004, -0.045);
+      hand.add(finger);
+    }
+    const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.0075, 0.026, 3, 7), skinM);
+    thumb.rotation.set(0.35, 0, -0.85);
+    thumb.position.set(-0.039, -0.002, -0.012);
+    hand.add(thumb);
     group.add(fore, sleeve, hand);
     return { group, fore, sleeve, hand };
   }
@@ -76,7 +89,7 @@ export class Viewmodel {
     for (const a of [this.armL, this.armR]) {
       (a.sleeve.material as THREE.MeshStandardMaterial).color.setHex(sleeve);
       (a.fore.material as THREE.MeshStandardMaterial).color.setHex(glove);
-      (a.hand.material as THREE.MeshStandardMaterial).color.setHex(glove);
+      a.hand.traverse((o) => { const mesh = o as THREE.Mesh; if (mesh.isMesh) (mesh.material as THREE.MeshStandardMaterial).color.setHex(glove); });
     }
   }
 
