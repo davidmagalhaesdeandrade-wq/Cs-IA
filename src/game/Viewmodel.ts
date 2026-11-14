@@ -241,7 +241,15 @@ export class Viewmodel {
         a.rotation.y += (0.95 - 1.9 * p2) * show * (cat === 'knife' ? 0.6 : 1);
         a.rotation.z += (0.55 - 1.2 * p2) * show;
         a.rotation.x += 0.15 * show;
-        if (cat === 'knife') a.rotation.z += Math.sin(seg(k, 0.2, 0.75) * Math.PI * 2) * 0.8 * show;
+        if (cat === 'knife') {
+          const flourish = seg(k, 0.16, 0.34) * (1 - seg(k, 0.66, 0.84));
+          const spin = Math.sin(seg(k, 0.12, 0.82) * Math.PI * 2);
+          a.rotation.z += Math.sin(seg(k, 0.2, 0.75) * Math.PI * 2) * 0.8 * show;
+          a.rotation.x += flourish * 0.9;
+          a.rotation.y += spin * 1.15 * show;
+          a.position.y += Math.sin(seg(k, 0.12, 0.88) * Math.PI) * 0.045 * show;
+          a.position.x += Math.sin(seg(k, 0.12, 0.88) * Math.PI * 2) * 0.035 * show;
+        }
         break;
       }
       case 'slash': {
