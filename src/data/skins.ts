@@ -98,6 +98,7 @@ export const SKINS: SkinDef[] = [
   S('deagle', 'carbon', 'Heavy Carbon', 'restricted', 'Coleção Metro AI', 'Fibra de carbono com componentes metálicos escurecidos.'),
   S('knife', 'neon', 'Voltage Edge', 'covert', 'Coleção Synthwave AI', 'Lâmina com circuito neon e cabo preto texturizado.'),
   S('knife', 'dragon', 'Wyrm Fang', 'covert', 'Coleção Lenda AI', 'Lâmina escamada em tons de brasa e cabo escuro.'),
+  S('knife', 'carbon', 'M9 Bayonet | Carbon', 'covert', 'Coleção Forge AI', 'Baioneta M9 de lâmina larga com guarda cruzada, canal de alívio e cabo texturizado em fibra de carbono.'),
 ];
 
 export const skinById = (id: string) => SKINS.find((s) => s.id === id);

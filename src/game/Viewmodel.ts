@@ -189,8 +189,10 @@ export class Viewmodel {
     }
     if (mag) { mag.position.copy(this.magHome); mag.visible = true; }
     if (bolt) { bolt.position.copy(this.boltHome); bolt.rotation.set(0, 0, 0); }
-    const butterflyHinge = g.getObjectByName('butterflyHinge');
-    if (butterflyHinge) butterflyHinge.rotation.set(0, 0, 0);
+    const butterflyLeft = g.getObjectByName('butterflyHandleLeft') as THREE.Group | null;
+    const butterflyRight = g.getObjectByName('butterflyHandleRight') as THREE.Group | null;
+    if (butterflyLeft) butterflyLeft.rotation.set(0, 0, 0);
+    if (butterflyRight) butterflyRight.rotation.set(0, 0, 0);
     const hand = this.supportHome.clone();
     let rightHand = new THREE.Vector3(0, -0.055, 0.035);
     const cat = WEAPONS[this.weaponId].category;
@@ -234,33 +236,42 @@ export class Viewmodel {
         break;
       }
       case 'inspect': {
-        // keyframed inspect: show left side, flip to right side, return
-        const p1 = seg(k, 0.0, 0.18), p2 = seg(k, 0.4, 0.58), p3 = seg(k, 0.82, 1);
-        const show = p1 * (1 - p3);
-        a.position.x -= 0.1 * show;
+        const show = seg(k, 0.0, 0.18) * (1 - seg(k, 0.82, 1));
+        a.position.x -= (cat === 'knife' ? 0.075 : 0.1) * show;
         a.position.y += 0.03 * show;
         a.position.z += 0.06 * show;
-        a.rotation.y += (0.95 - 1.9 * p2) * show * (cat === 'knife' ? 0.6 : 1);
-        a.rotation.z += (0.55 - 1.2 * p2) * show;
-        a.rotation.x += 0.15 * show;
         if (cat === 'knife') {
-          const flourish = seg(k, 0.16, 0.34) * (1 - seg(k, 0.66, 0.84));
-          const spin = Math.sin(seg(k, 0.12, 0.82) * Math.PI * 2);
-          a.rotation.z += Math.sin(seg(k, 0.2, 0.75) * Math.PI * 2) * 0.8 * show;
-          a.rotation.x += flourish * 0.9;
-          a.rotation.y += spin * 1.15 * show;
-          a.position.y += Math.sin(seg(k, 0.12, 0.88) * Math.PI) * 0.045 * show;
-          a.position.x += Math.sin(seg(k, 0.12, 0.88) * Math.PI * 2) * 0.035 * show;
           const style = g.userData.knifeStyle;
-          if (style === 'butterfly' && butterflyHinge) {
-            const open = Math.sin(seg(k, 0.08, 0.78) * Math.PI);
-            butterflyHinge.rotation.z = Math.sin(seg(k, 0.12, 0.82) * Math.PI * 4) * 1.05 * open;
-            a.rotation.y += Math.sin(seg(k, 0.12, 0.82) * Math.PI * 4) * 0.22 * show;
+          const turn = seg(k, 0.22, 0.48) * (1 - seg(k, 0.68, 0.88));
+          const settle = seg(k, 0.08, 0.24) * (1 - seg(k, 0.78, 0.94));
+          a.rotation.y += 0.45 * settle - 0.35 * turn;
+          a.rotation.x += 0.12 * settle;
+          if (style === 'butterfly') {
+            const flourish = seg(k, 0.12, 0.28) * (1 - seg(k, 0.62, 0.8));
+            const flick = Math.sin(seg(k, 0.18, 0.62) * Math.PI * 2);
+            if (butterflyLeft) butterflyLeft.rotation.x = flick * 1.05 * flourish;
+            if (butterflyRight) butterflyRight.rotation.x = -flick * 1.05 * flourish;
+            a.rotation.z += 0.22 * turn;
           } else if (style === 'karambit') {
-            a.rotation.z += Math.sin(seg(k, 0.1, 0.9) * Math.PI) * 0.28 * show;
+            const roll = Math.sin(seg(k, 0.18, 0.76) * Math.PI);
+            a.rotation.z += 0.48 * roll;
+            a.rotation.y += 0.28 * roll;
+            a.position.y += 0.025 * roll;
+          } else if (style === 'm9') {
+            const reveal = Math.sin(seg(k, 0.16, 0.82) * Math.PI);
+            a.rotation.y += 0.58 * reveal;
+            a.rotation.z -= 0.16 * turn;
+            a.position.y += 0.018 * turn;
+            a.position.z += 0.025 * reveal;
           } else if (style === 'stiletto') {
-            a.rotation.x += Math.sin(seg(k, 0.1, 0.9) * Math.PI) * 0.18 * show;
+            a.rotation.x += 0.2 * turn;
+            a.rotation.y += 0.12 * turn;
           }
+        } else {
+          const p2 = seg(k, 0.4, 0.58);
+          a.rotation.y += 0.95 - 1.9 * p2;
+          a.rotation.z += 0.55 - 1.2 * p2;
+          a.rotation.x += 0.15 * show;
         }
         break;
       }

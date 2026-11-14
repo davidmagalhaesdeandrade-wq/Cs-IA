@@ -114,6 +114,7 @@ export function getMats(weapon: string, pattern: Pattern): Mats {
       break;
     case 'carbon':
       receiver = std({ map: tex!, metalness: 0.4, roughness: 0.4 });
+      if (weapon === 'knife') furniture = std({ map: tex!, metalness: 0.15, roughness: 0.5 });
       break;
   }
   const m: Mats = { receiver, furniture, metal, dark, mag, rubber, blade, glass, accent };
@@ -353,60 +354,96 @@ function buildPistol(m: Mats, kind: 'glock' | 'usps' | 'deagle') {
 function buildKnife(m: Mats, pattern: Pattern) {
   const g = new THREE.Group();
   // Os acabamentos especiais também definem a silhueta da faca equipada:
-  // Fade = karambit, Tiger = butterfly, Blue Steel = stiletto.
-  const style = pattern === 'fade' ? 'karambit' : pattern === 'tiger' ? 'butterfly' : pattern === 'bluesteel' ? 'stiletto' : 'classic';
+  // These original finishes select distinct silhouettes as well as blade finishes.
+  const style = pattern === 'fade' ? 'karambit' : pattern === 'tiger' ? 'butterfly' : pattern === 'carbon' ? 'm9' : pattern === 'bluesteel' ? 'stiletto' : 'classic';
   g.userData.knifeStyle = style;
 
-  const grip = new THREE.Group();
-  const handleLength = style === 'karambit' ? 0.13 : style === 'stiletto' ? 0.16 : 0.145;
-  R(grip, 0.027, 0.036, handleLength, m.furniture, 0, -0.004, 0.045, -0.08);
-  R(grip, 0.029, 0.039, handleLength * 0.73, m.rubber, 0, -0.004, 0.055, -0.08);
-  for (let i = 0; i < 6; i++) B(grip, 0.030, 0.003, 0.006, m.dark, 0, -0.018, 0.012 + i * 0.016, -0.08);
-  R(grip, 0.034, 0.012, 0.018, m.metal, 0, -0.002, -0.035);
-  C(grip, 0.014, 0.012, m.metal, 0, -0.004, 0.122);
-  const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), m.metal);
-  add(grip, pommel, 0, -0.004, 0.132);
-  g.add(grip);
+  let grip: THREE.Group | null = null;
+  if (style !== 'butterfly') {
+    grip = new THREE.Group();
+    const handleLength = style === 'karambit' ? 0.13 : style === 'stiletto' ? 0.16 : style === 'm9' ? 0.17 : 0.145;
+    R(grip, 0.027, 0.036, handleLength, m.furniture, 0, -0.004, 0.045, -0.08);
+    R(grip, 0.029, 0.039, handleLength * 0.73, m.rubber, 0, -0.004, 0.055, -0.08);
+    for (let i = 0; i < 6; i++) B(grip, 0.030, 0.003, 0.006, m.dark, 0, -0.018, 0.012 + i * 0.016, -0.08);
+    R(grip, 0.034, 0.012, 0.018, m.metal, 0, -0.002, -0.035);
+    C(grip, 0.014, 0.012, m.metal, 0, -0.004, 0.122);
+    const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), m.metal);
+    add(grip, pommel, 0, -0.004, 0.132);
+    g.add(grip);
+  }
 
   if (style === 'karambit') {
-    // Anel de dedo e lâmina curva em gancho.
+    // Finger ring and a hooked, planar blade rather than a cylindrical proxy.
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.006, 8, 20), m.metal);
     ring.position.set(0, -0.004, 0.145);
-    grip.add(ring);
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.006, -0.035), new THREE.Vector3(0, 0.025, -0.105),
-      new THREE.Vector3(0, 0.055, -0.17), new THREE.Vector3(0, 0.075, -0.19),
-      new THREE.Vector3(0, 0.045, -0.205), new THREE.Vector3(0, 0.008, -0.18)
-    ]);
-    const blade = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.012, 8, false), m.blade);
-    blade.scale.set(1.0, 1.0, 0.8);
+    grip?.add(ring);
+    const profile = new THREE.Shape();
+    profile.moveTo(0, -0.012);
+    profile.quadraticCurveTo(0.085, -0.02, 0.17, -0.014);
+    profile.quadraticCurveTo(0.235, -0.009, 0.24, -0.001);
+    profile.quadraticCurveTo(0.222, 0.013, 0.19, 0.023);
+    profile.quadraticCurveTo(0.177, 0.028, 0.16, 0.029);
+    profile.quadraticCurveTo(0.181, 0.0135, 0.17, 0.006);
+    profile.quadraticCurveTo(0.095, 0.0025, 0, 0.012);
+    profile.closePath();
+    const bladeGeo = new THREE.ExtrudeGeometry(profile, { depth: 0.007, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.0015, bevelSegments: 1 });
+    bladeGeo.rotateY(Math.PI / 2);
+    const blade = new THREE.Mesh(bladeGeo, m.blade);
+    blade.position.set(-0.0035, 0, -0.035);
     blade.name = 'blade';
     g.add(blade);
-    const edge = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.003, 6, false), m.accent);
-    edge.position.x = 0.009;
+    const edgePath = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.003, -0.012, -0.035), new THREE.Vector3(0.003, -0.019, -0.12),
+      new THREE.Vector3(0.003, -0.014, -0.205), new THREE.Vector3(0.003, -0.001, -0.275),
+      new THREE.Vector3(0.003, 0.018, -0.225), new THREE.Vector3(0.003, 0.026, -0.195)
+    ]);
+    const edge = new THREE.Mesh(new THREE.TubeGeometry(edgePath, 28, 0.002, 6, false), m.accent);
     g.add(edge);
     R(g, 0.07, 0.014, 0.018, m.metal, 0, -0.001, -0.035);
   } else if (style === 'butterfly') {
-    // Duas talas articuladas, pivôs visíveis e lâmina central.
-    const hinge = new THREE.Group();
-    hinge.name = 'butterflyHinge';
-    hinge.position.set(0, 0, -0.035);
-    g.add(hinge);
+    // Two independent scales pivot around the tang; the blade stays centered.
     for (const side of [-1, 1]) {
-      R(hinge, 0.018, 0.026, 0.15, m.furniture, side * 0.025, -0.004, 0.07, side * 0.08);
-      for (let i = 0; i < 4; i++) B(hinge, 0.019, 0.003, 0.006, m.accent, side * 0.025, -0.018, 0.02 + i * 0.025);
+      const handle = new THREE.Group();
+      handle.name = side < 0 ? 'butterflyHandleLeft' : 'butterflyHandleRight';
+      handle.position.set(side * 0.025, 0, -0.035);
+      g.add(handle);
+      R(handle, 0.018, 0.026, 0.15, m.furniture, 0, -0.004, 0.105, side * 0.08);
+      for (let i = 0; i < 4; i++) B(handle, 0.019, 0.003, 0.006, m.accent, 0, -0.018, 0.055 + i * 0.025);
       const pivot = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.012, 12), m.metal);
       pivot.rotation.z = Math.PI / 2;
-      add(hinge, pivot, side * 0.025, 0.012, 0.0);
+      add(handle, pivot, 0, 0.012, 0);
     }
     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.027, 0.22), m.blade);
-    blade.position.set(0, 0.006, -0.17);
+    blade.position.set(0, 0.006, -0.205);
     blade.name = 'blade';
-    hinge.add(blade);
+    g.add(blade);
     const tip = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.045, 5), m.blade);
     tip.rotation.x = -Math.PI / 2;
-    tip.position.set(0, 0.006, -0.3);
-    hinge.add(tip);
+    tip.position.set(0, 0.006, -0.335);
+    g.add(tip);
+  } else if (style === 'm9') {
+    // Broad clip-point bayonet with a stepped guard and a forged spine.
+    R(g, 0.09, 0.014, 0.025, m.metal, 0, 0.0, -0.035);
+    C(g, 0.008, 0.025, m.metal, 0, 0.0, -0.04, 'z');
+    const profile = new THREE.Shape();
+    profile.moveTo(0, -0.012);
+    profile.lineTo(0.055, -0.015);
+    profile.lineTo(0.22, -0.013);
+    profile.lineTo(0.295, -0.005);
+    profile.lineTo(0.34, 0.004);
+    profile.lineTo(0.292, 0.01);
+    profile.lineTo(0.19, 0.014);
+    profile.lineTo(0.045, 0.012);
+    profile.closePath();
+    const bladeGeo = new THREE.ExtrudeGeometry(profile, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.0015, bevelSegments: 1 });
+    bladeGeo.rotateY(Math.PI / 2);
+    const blade = new THREE.Mesh(bladeGeo, m.blade);
+    blade.position.set(-0.004, 0.006, -0.035);
+    blade.name = 'blade';
+    g.add(blade);
+    const fuller = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.002, 0.23), m.dark);
+    fuller.position.set(0.005, 0.008, -0.16);
+    g.add(fuller);
   } else {
     // Lâmina reta de perfil estreito para stiletto e faca clássica.
     const bladeLength = style === 'stiletto' ? 0.27 : 0.215;
