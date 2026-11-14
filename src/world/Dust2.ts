@@ -38,7 +38,7 @@ const RECTS: [number, number, number, number, number, Tag?, boolean?][] = [
   [16, 9, 17, 10, 0],                 // mid doors
   [13, 2, 21, 8, 0, 'C', true],       // CT spawn
   [22, 3, 23, 6, 0.5],                // CT -> A
-  [22, 7, 23, 9, 0],                  // secondary CT -> A retake route
+  [22, 7, 23, 9, 0.5],                // raised secondary CT -> A retake route
   [11, 4, 12, 5, 0],                  // B doors
   [1, 2, 10, 11, 0, '', true],        // B site area
   [3, 12, 6, 22, 0],                  // B tunnel exit
