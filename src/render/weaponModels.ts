@@ -140,7 +140,7 @@ function add(g: THREE.Object3D, mesh: THREE.Mesh, x: number, y: number, z: numbe
   return mesh;
 }
 const B = (g: THREE.Object3D, w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0, name?: string) =>
-  add(g, new THREE.Mesh(boxG(w, h, d, false), m), x, y, z, rx, ry, rz, name);
+  add(g, new THREE.Mesh(boxG(w, h, d, true), m), x, y, z, rx, ry, rz, name);
 const R = (g: THREE.Object3D, w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0, name?: string) =>
   add(g, new THREE.Mesh(boxG(w, h, d, true), m), x, y, z, rx, ry, rz, name);
 /** cylinder along given axis */
