@@ -164,6 +164,25 @@ function support(g: THREE.Object3D, x: number, y: number, z: number) {
   g.add(o);
 }
 
+/** Low-profile Picatinny rail with individually machined cross slots. */
+function topRail(g: THREE.Object3D, m: Mats, fromZ: number, toZ: number, y: number, width: number, slots: number) {
+  const depth = Math.abs(toZ - fromZ);
+  if (depth <= 0 || slots <= 0) return;
+  B(g, width, 0.007, depth + 0.012, m.dark, 0, y, (fromZ + toZ) / 2);
+  const slotDepth = Math.min(0.009, depth / (slots * 1.5));
+  for (let i = 0; i < slots; i++) {
+    const z = fromZ + (toZ - fromZ) * ((i + 0.5) / slots);
+    B(g, width * 0.88, 0.0035, slotDepth, m.metal, 0, y + 0.005, z);
+  }
+}
+
+/** Small flush pins make the receiver read as assembled metalwork. */
+function receiverPins(g: THREE.Object3D, m: Mats, halfWidth: number, y: number, zPositions: number[]) {
+  for (const x of [-halfWidth, halfWidth]) for (const z of zPositions) {
+    C(g, 0.004, 0.003, m.metal, x, y, z, 'x', undefined, 8);
+  }
+}
+
 // ---------- weapon builders (forward = -Z, origin = top of pistol grip) ----------
 function buildAK(m: Mats, galil = false) {
   const g = new THREE.Group();
@@ -180,6 +199,11 @@ function buildAK(m: Mats, galil = false) {
   C(g, 0.016, 0.06, m.dark, 0, 0.018, -0.8);
   B(g, 0.032, 0.02, 0.05, m.dark, 0, 0.072, -0.2);
   C(g, 0.006, 0.04, m.metal, 0.034, 0.025, -0.1, 'x');
+  topRail(g, m, -0.17, -0.015, 0.078, 0.028, 8);
+  B(g, 0.012, 0.018, 0.014, m.dark, 0, 0.084, -0.205); // rear sight notch
+  B(g, 0.014, 0.016, 0.012, m.dark, 0, 0.088, -0.72); // front post
+  receiverPins(g, m, 0.027, 0.012, [-0.16, -0.02]);
+  B(g, 0.007, 0.026, 0.065, m.metal, 0.03, 0.004, 0.005, 0, 0, 0.12); // safety lever
   if (m.accent !== m.dark) B(g, 0.054, 0.006, 0.2, m.accent, 0, 0.068, -0.08);
   const mag = new THREE.Group();
   mag.name = 'mag';
@@ -222,6 +246,11 @@ function buildM4(m: Mats, silenced: boolean) {
     muzzle(g, 0, 0.035, -0.82);
   }
   B(g, 0.004, 0.022, 0.06, m.dark, 0.027, 0.04, -0.06);
+  B(g, 0.014, 0.022, 0.025, m.dark, 0, 0.105, 0.035); // rear aperture sight
+  for (const x of [-1, 1]) for (let i = 0; i < 5; i++) {
+    B(g, 0.007, 0.034, 0.012, m.dark, x * 0.034, 0.035, -0.25 - i * 0.038);
+  }
+  receiverPins(g, m, 0.026, -0.005, [-0.13, 0.02]);
   const mag = new THREE.Group();
   mag.name = 'mag';
   mag.position.set(0, -0.04, -0.11);
@@ -292,6 +321,8 @@ function buildPistol(m: Mats, kind: 'glock' | 'usps' | 'deagle') {
   B(slide, 0.006, 0.01, 0.008, m.dark, 0, big ? 0.028 : 0.022, -len / 2 + 0.01);
   B(slide, 0.018, 0.01, 0.008, m.dark, 0, big ? 0.028 : 0.022, len / 2 - 0.01);
   if (big) B(slide, 0.02, 0.012, len - 0.02, m.receiver, 0, 0.026, 0);
+  B(slide, 0.012, 0.009, 0.008, m.dark, 0, big ? 0.049 : 0.04, -len / 2 + 0.012); // front sight
+  B(slide, 0.014, 0.008, 0.01, m.dark, 0, big ? 0.049 : 0.04, len / 2 - 0.012); // rear notch
   slide.position.set(0, big ? 0.05 : 0.045, -len / 2 + 0.03);
   g.add(slide);
   R(g, big ? 0.032 : 0.028, 0.026, len * 0.9, m.furniture === m.dark ? m.dark : (big ? m.dark : m.furniture), 0, big ? 0.015 : 0.016, -len / 2 + 0.035);
@@ -405,6 +436,9 @@ function buildSMG(m: Mats, kind: 'mac10' | 'mp9' | 'p90') {
   }
   const len = kind === 'mac10' ? 0.24 : 0.28;
   R(g, 0.05, 0.08, len, m.receiver, 0, 0.02, -len / 2 + 0.05);
+  topRail(g, m, -len * 0.72, 0.02, 0.063, 0.026, 5);
+  B(g, 0.01, 0.018, 0.012, m.dark, 0, 0.077, 0.015); // rear sight
+  receiverPins(g, m, 0.026, 0.02, [-len * 0.48, 0.02]);
   C(g, 0.01, 0.07, m.metal, 0, 0.04, -len + 0.02);
   R(g, 0.034, 0.1, 0.045, m.furniture, 0, -0.065, 0.02, -0.15);
   const mag = new THREE.Group();
@@ -432,6 +466,9 @@ function buildFamas(m: Mats) {
   R(g, 0.03, 0.03, 0.4, m.dark, 0, 0.11, -0.02);
   B(g, 0.02, 0.06, 0.02, m.dark, 0, 0.07, -0.2);
   B(g, 0.02, 0.06, 0.02, m.dark, 0, 0.07, 0.15);
+  topRail(g, m, -0.2, 0.12, 0.126, 0.03, 10);
+  B(g, 0.014, 0.02, 0.014, m.dark, 0, 0.143, 0.09); // rear sight
+  receiverPins(g, m, 0.028, 0.005, [-0.12, 0.12]);
   C(g, 0.011, 0.25, m.metal, 0, 0.02, -0.4);
   C(g, 0.006, 0.12, m.dark, 0.0, -0.05, -0.3);
   R(g, 0.034, 0.1, 0.045, m.dark, 0, -0.08, -0.05, -0.2);
