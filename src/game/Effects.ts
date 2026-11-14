@@ -196,7 +196,15 @@ export class Effects {
       this.flashes.push({ sprite: s, t: 0.05, max: 0.05, grow: 0 });
       this.light(p, 8, 0xffa040, 7);
     }
-    this.smoke.spawn(p, this.v.set(dir.x * 0.6, 0.4, dir.z * 0.6), 0.6, 0.12, 0.8, 0.8, 0.8, 0.25, -0.3, 1, 3);
+    this.smoke.spawn(
+      p,
+      this.v.set(dir.x * (silenced ? 0.25 : 0.6), silenced ? 0.16 : 0.4, dir.z * (silenced ? 0.25 : 0.6)),
+      silenced ? 0.28 : 0.6,
+      silenced ? 0.07 : 0.12,
+      0.8, 0.8, 0.8,
+      silenced ? 0.1 : 0.25,
+      -0.3, 1, 3
+    );
   }
 
   explosion(p: THREE.Vector3, big = true) {

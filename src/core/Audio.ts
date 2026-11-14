@@ -271,6 +271,24 @@ class AudioManager {
     } else this.click(null, 0.12, 2400, 0.4);
   }
 
+  inspectKnife(style: string) {
+    this.ensure();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const out = this.out(null, 0.32);
+    const metal = style === 'karambit' ? 3400 : style === 'butterfly' ? 2300 : 1700;
+    this.noiseBurst(out, t, 0.16, 'bandpass', style === 'butterfly' ? 850 : 1250, metal, 1.1, 0.5, 0.025);
+    this.tone(out, t + 0.09, 'triangle', metal, metal * 0.72, 0.12, style === 'm9' ? 0.38 : 0.24);
+    if (style === 'butterfly') {
+      this.click(null, 0.16, 2100, 0.24);
+      this.click(null, 0.52, 2750, 0.2);
+    } else if (style === 'karambit') {
+      this.tone(out, t + 0.31, 'sine', 1450, 1280, 0.2, 0.1);
+    } else {
+      this.click(null, 0.34, 1600, 0.18);
+    }
+  }
+
   footstep(pos: THREE.Vector3 | null, surface: string, vol = 1) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;

@@ -215,7 +215,10 @@ export class GameSession {
   inspectWeapon(): boolean {
     const weapon = this.player.weapon;
     if (this.state !== 'playing' || this.paused || !this.player.alive || this.buyMenu?.open || weapon.reloading || this.viewmodel.state !== 'idle') return false;
-    this.viewmodel.play('inspect', weapon.def.category === 'knife' ? 2.6 : 3.4);
+    const isKnife = weapon.def.category === 'knife';
+    this.viewmodel.play('inspect', isKnife ? 2.6 : 3.4);
+    if (isKnife) audio.inspectKnife(this.viewmodel.gun?.userData.knifeStyle ?? 'classic');
+    else audio.ui('click');
     return true;
   }
 
