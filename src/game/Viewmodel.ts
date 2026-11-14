@@ -189,6 +189,8 @@ export class Viewmodel {
     }
     if (mag) { mag.position.copy(this.magHome); mag.visible = true; }
     if (bolt) { bolt.position.copy(this.boltHome); bolt.rotation.set(0, 0, 0); }
+    const butterflyHinge = g.getObjectByName('butterflyHinge');
+    if (butterflyHinge) butterflyHinge.rotation.set(0, 0, 0);
     const hand = this.supportHome.clone();
     let rightHand = new THREE.Vector3(0, -0.055, 0.035);
     const cat = WEAPONS[this.weaponId].category;
@@ -249,6 +251,16 @@ export class Viewmodel {
           a.rotation.y += spin * 1.15 * show;
           a.position.y += Math.sin(seg(k, 0.12, 0.88) * Math.PI) * 0.045 * show;
           a.position.x += Math.sin(seg(k, 0.12, 0.88) * Math.PI * 2) * 0.035 * show;
+          const style = g.userData.knifeStyle;
+          if (style === 'butterfly' && butterflyHinge) {
+            const open = Math.sin(seg(k, 0.08, 0.78) * Math.PI);
+            butterflyHinge.rotation.z = Math.sin(seg(k, 0.12, 0.82) * Math.PI * 4) * 1.05 * open;
+            a.rotation.y += Math.sin(seg(k, 0.12, 0.82) * Math.PI * 4) * 0.22 * show;
+          } else if (style === 'karambit') {
+            a.rotation.z += Math.sin(seg(k, 0.1, 0.9) * Math.PI) * 0.28 * show;
+          } else if (style === 'stiletto') {
+            a.rotation.x += Math.sin(seg(k, 0.1, 0.9) * Math.PI) * 0.18 * show;
+          }
         }
         break;
       }
