@@ -38,6 +38,7 @@ const RECTS: [number, number, number, number, number, Tag?, boolean?][] = [
   [16, 9, 17, 10, 0],                 // mid doors
   [13, 2, 21, 8, 0, 'C', true],       // CT spawn
   [22, 3, 23, 6, 0.5],                // CT -> A
+  [22, 7, 23, 9, 0],                  // secondary CT -> A retake route
   [11, 4, 12, 5, 0],                  // B doors
   [1, 2, 10, 11, 0, '', true],        // B site area
   [3, 12, 6, 22, 0],                  // B tunnel exit
@@ -51,7 +52,7 @@ const ROOFS: [number, number, number, number, number][] = [
   [3, 23, 10, 29, 3.6], [11, 24, 14, 26, 3.4], [3, 17, 6, 22, 3.6]
 ];
 const LINTELS: [number, number, number, number][] = [
-  [16, 9, 17, 10], [31, 27, 32, 28], [11, 4, 12, 5], [22, 3, 23, 6]
+  [16, 9, 17, 10], [31, 27, 32, 28], [11, 4, 12, 5], [22, 3, 23, 6], [22, 7, 23, 9]
 ];
 // crates: cell x, z, stack height (1 or 2)
 const CRATES: [number, number, number][] = [
@@ -76,7 +77,8 @@ export const LOCATIONS: { name: string; r: [number, number, number, number] }[] 
   { name: 'Túnel B', r: [3, 12, 6, 22] },
   { name: 'Túneis Sup.', r: [3, 23, 10, 36] },
   { name: 'Túneis Inf.', r: [11, 24, 14, 26] },
-  { name: 'CT → A', r: [22, 3, 23, 6] }
+  { name: 'CT → A', r: [22, 3, 23, 6] },
+  { name: 'Acesso CT → A', r: [22, 7, 23, 9] }
 ];
 
 function hash2(x: number, z: number) {
