@@ -480,9 +480,14 @@ function buildKnife(m: Mats, pattern: Pattern) {
   }
   // The three specialist silhouettes use distinct in-world scales to keep
   // blade + handle proportions close to a practical ~33–36 cm knife.
-  if (style === 'karambit') g.scale.setScalar(0.82);
-  else if (style === 'butterfly') g.scale.setScalar(0.74);
-  else if (style === 'm9') g.scale.setScalar(0.68);
+  const modelScale = style === 'karambit' ? 0.82 : style === 'butterfly' ? 0.74 : style === 'm9' ? 0.68 : 1;
+  if (modelScale !== 1) {
+    const geometry = new THREE.Group();
+    geometry.name = 'knifeGeometry';
+    while (g.children.length) geometry.add(g.children[0]);
+    geometry.scale.setScalar(modelScale);
+    g.add(geometry);
+  }
   return g;
 }
 
