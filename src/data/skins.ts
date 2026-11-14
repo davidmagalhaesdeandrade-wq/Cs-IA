@@ -46,7 +46,21 @@ export const SKINS: SkinDef[] = [
   S('knife', 'default', 'Default', 'consumer', 'Coleção Original', 'Lâmina de aço com cabo emborrachado.'),
   S('knife', 'fade', 'Fade', 'covert', 'Coleção Prisma AI', 'Degradê anodizado de rosa a dourado.'),
   S('knife', 'tiger', 'Tiger Stripe', 'covert', 'Coleção Selva AI', 'Listras pretas sobre laranja queimado.'),
-  S('knife', 'bluesteel', 'Blue Steel', 'covert', 'Coleção Forge AI', 'Aço temperado azul-violeta.')
+  S('knife', 'bluesteel', 'Blue Steel', 'covert', 'Coleção Forge AI', 'Aço temperado azul-violeta.'),
+  S('galil', 'dragon', 'Inferno Scale', 'covert', 'Coleção Lenda AI', 'Escamas incandescentes em relevo sobre polímero verde-petróleo.'),
+  S('galil', 'carbon', 'Carbon Vector', 'restricted', 'Coleção Metro AI', 'Fibra de carbono cruzada com marcações técnicas em aço.'),
+  S('famas', 'phantom', 'Arctic Phantom', 'classified', 'Coleção Spectre AI', 'Base branca acetinada com grafismos geométricos escuros.'),
+  S('famas', 'neon', 'Pulse Grid', 'restricted', 'Coleção Synthwave AI', 'Circuitos luminosos ciano e magenta sobre grafite.'),
+  S('ssg08', 'fade', 'Aurora Fade', 'classified', 'Coleção Prisma AI', 'Degradê iridescente aplicado ao corpo e à coronha.'),
+  S('ssg08', 'bluesteel', 'Tempered Storm', 'restricted', 'Coleção Forge AI', 'Aço azulado com reflexos violeta e marcas de têmpera.'),
+  S('mac10', 'tiger', 'Predator', 'restricted', 'Coleção Selva AI', 'Listras de tigre em laranja queimado e preto profundo.'),
+  S('mac10', 'carbon', 'Carbon Rush', 'milspec', 'Coleção Metro AI', 'Trama de carbono com detalhes industriais.'),
+  S('mp9', 'neon', 'Neon Vector', 'classified', 'Coleção Synthwave AI', 'Linhas elétricas em ciano e magenta sobre preto fosco.'),
+  S('mp9', 'bluesteel', 'Blue Temper', 'restricted', 'Coleção Forge AI', 'Metal azulado com acabamento escovado.'),
+  S('p90', 'phantom', 'Arctic Web', 'classified', 'Coleção Spectre AI', 'Grafismos angulares em branco, grafite e ciano.'),
+  S('p90', 'dragon', 'Dragon Pulse', 'covert', 'Coleção Lenda AI', 'Escamas flamejantes com textura de alto contraste.'),
+  S('nova', 'camo', 'Urban Breach', 'milspec', 'Coleção Metro AI', 'Camuflagem urbana irregular em cinza e carvão.'),
+  S('nova', 'redline', 'Crimson Pump', 'restricted', 'Coleção Phoenix AI', 'Polímero preto com linhas vermelhas de alta visibilidade.')
 ];
 
 export const skinById = (id: string) => SKINS.find((s) => s.id === id);
