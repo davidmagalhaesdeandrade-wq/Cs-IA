@@ -4,15 +4,26 @@ import { Dust2Map, GW, GH, CELL, OX, OZ } from './Dust2';
 const STEP = 0.55;
 
 export class Nav {
-  constructor(public map: Dust2Map) {}
+  private collisionBlocked: Uint8Array;
+
+  constructor(public map: Dust2Map) {
+    this.collisionBlocked = new Uint8Array(GW * GH);
+    for (let z = 0; z < GH; z++) for (let x = 0; x < GW; x++) {
+      const c = map.cell(x, z)!;
+      if (!c.walk || c.blocked) continue;
+      const p = map.cellCenter(x, z);
+      if (map.collision.overlapAny(p.x, p.y + 0.02, p.z, 0.34, 1.7)) this.collisionBlocked[z * GW + x] = 1;
+    }
+  }
 
   walkable(x: number, z: number) {
     const c = this.map.cell(x, z);
-    return !!c && c.walk && !c.blocked;
+    return !!c && c.walk && !c.blocked && this.collisionBlocked[z * GW + x] === 0;
   }
   private canStep(ax: number, az: number, bx: number, bz: number) {
-    const a = this.map.cell(ax, az)!, b = this.map.cell(bx, bz);
-    if (!b || !b.walk || b.blocked) return false;
+    const a = this.map.cell(ax, az);
+    if (!a || !this.walkable(ax, az) || !this.walkable(bx, bz)) return false;
+    const b = this.map.cell(bx, bz)!;
     return Math.abs(a.h - b.h) <= STEP;
   }
 

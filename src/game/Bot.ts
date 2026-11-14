@@ -216,7 +216,11 @@ export class Bot {
         speedMul = 1;
         if (this.target) desiredYaw = yawTo(a.pos, this.target.pos);
         if (!w.reloading && w.mag < w.def.mag * 0.6) this.reload();
-        if (this.coverT <= 0 || !moveDir) {
+        if (!moveDir && this.coverT > 0) {
+          // Hold the selected cover briefly before re-peeking or re-engaging.
+          this.wantCrouch = true;
+          speedMul = 0;
+        } else if (this.coverT <= 0) {
           this.setState(this.target ? 'attack' : 'hold');
         }
         break;
@@ -360,18 +364,25 @@ export class Bot {
     const s = this.s, a = this.a;
     const [cx, cz] = s.map.worldToCell(a.pos);
     const tEye = t.eyePos();
-    for (let k = 0; k < 14; k++) {
+    let best: THREE.Vector3 | null = null, bestScore = Infinity;
+    for (let k = 0; k < 24; k++) {
       const p = s.nav.randomCellNear(cx, cz, 3);
       if (!p) continue;
+      const fromBot = p.distanceTo(a.pos), fromThreat = p.distanceTo(t.pos);
+      if (fromBot < 1.8 || fromThreat < 3 || fromThreat > 14) continue;
       const e = p.clone(); e.y += 1.5;
-      if (!s.collision.lineOfSight(tEye, e)) {
-        this.navigateTo(p, 0.1);
-        this.coverT = rand(1.4, 2.5);
-        this.setState('takeCover');
-        return true;
-      }
+      if (s.collision.lineOfSight(tEye, e)) continue;
+      const path = s.nav.findPath(a.pos, p, 0.1);
+      if (!path?.length) continue;
+      const travel = path.reduce((sum, point, i) => sum + point.distanceTo(i ? path[i - 1] : a.pos), 0);
+      const score = travel + Math.abs(fromThreat - 7) * 0.25;
+      if (score < bestScore) { best = p; bestScore = score; }
     }
-    return false;
+    if (!best) return false;
+    this.navigateTo(best, 0.1);
+    this.coverT = rand(1.4, 2.5);
+    this.setState('takeCover');
+    return true;
   }
 
   reload() {
