@@ -17,20 +17,22 @@ export class Nav {
   }
 
   /** nearest walkable cell to a world position */
-  nearestCell(p: THREE.Vector3): [number, number] {
-    let [x, z] = this.map.worldToCell(p);
+  nearestCell(p: THREE.Vector3): [number, number] | null {
+    const [x, z] = this.map.worldToCell(p);
+    if (x < 0 || z < 0 || x >= GW || z >= GH) return null;
     if (this.walkable(x, z)) return [x, z];
-    for (let r = 1; r < 6; r++)
+    for (let r = 1; r < Math.max(GW, GH); r++)
       for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
         if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
         if (this.walkable(x + dx, z + dz)) return [x + dx, z + dz];
       }
-    return [x, z];
+    return null;
   }
 
   findPath(from: THREE.Vector3, to: THREE.Vector3, jitter = 0): THREE.Vector3[] | null {
-    const [sx, sz] = this.nearestCell(from);
-    const [tx, tz] = this.nearestCell(to);
+    const start = this.nearestCell(from), target = this.nearestCell(to);
+    if (!start || !target) return null;
+    const [sx, sz] = start, [tx, tz] = target;
     const N = GW * GH;
     const g = new Float32Array(N).fill(Infinity);
     const f = new Float32Array(N).fill(Infinity);
@@ -73,7 +75,12 @@ export class Nav {
     while (c !== -1 && c !== si) { cells.push([c % GW, (c / GW) | 0]); c = came[c]; }
     cells.reverse();
     const pts = cells.map(([x, z]) => this.map.cellCenter(x, z));
-    pts.push(to.clone());
+    const [goalX, goalZ] = this.map.worldToCell(to);
+    const goal = goalX === tx && goalZ === tz &&
+      !this.map.collision.overlapAny(to.x, to.y + 0.02, to.z, 0.34, 1.7)
+      ? to.clone() : this.map.cellCenter(tx, tz);
+    if (this.map.collision.overlapAny(goal.x, goal.y + 0.02, goal.z, 0.34, 1.7)) return null;
+    pts.push(goal);
     return this.smooth(from, pts);
   }
 
@@ -105,6 +112,7 @@ export class Nav {
         const cx = Math.floor((x - OX) / CELL), cz = Math.floor((z - OZ) / CELL);
         if (!this.walkable(cx, cz)) return false;
         const hh = this.map.cells[cz][cx].h;
+        if (this.map.collision.overlapAny(x, hh + 0.02, z, 0.34, 1.7)) return false;
         if (off === 0) {
           if (lastH !== null && Math.abs(hh - lastH) > STEP) return false;
           lastH = hh;

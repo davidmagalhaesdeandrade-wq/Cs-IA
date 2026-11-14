@@ -164,7 +164,7 @@ export class Bot {
       case 'moveToObjective':
       case 'pickupBomb':
       case 'patrol': {
-        moveDir = this.followPath();
+        moveDir = this.followPath(dt);
         if (moveDir) desiredYaw = Math.atan2(-moveDir.x, -moveDir.z);
         speedMul = this.state === 'patrol' ? 0.5 : 1;
         if (!moveDir) {
@@ -199,7 +199,7 @@ export class Bot {
       }
       case 'seekEnemy': {
         this.seekT -= dt;
-        moveDir = this.followPath();
+        moveDir = this.followPath(dt);
         if (moveDir) desiredYaw = Math.atan2(-moveDir.x, -moveDir.z);
         if (this.lastKnown) { desiredYaw = yawTo(a.pos, this.lastKnown); }
         speedMul = 0.8;
@@ -212,7 +212,7 @@ export class Bot {
       }
       case 'takeCover': {
         this.coverT -= dt;
-        moveDir = this.followPath();
+        moveDir = this.followPath(dt);
         speedMul = 1;
         if (this.target) desiredYaw = yawTo(a.pos, this.target.pos);
         if (!w.reloading && w.mag < w.def.mag * 0.6) this.reload();
@@ -478,7 +478,7 @@ export class Bot {
     }
   }
 
-  private followPath(): THREE.Vector3 | null {
+  private followPath(dt: number): THREE.Vector3 | null {
     const a = this.a;
     while (this.path.length) {
       const n = this.path[0];
@@ -486,7 +486,7 @@ export class Bot {
       const d = Math.hypot(dx, dz);
       if (d < (this.path.length === 1 ? 0.5 : 0.9)) { this.path.shift(); continue; }
       // stuck detection
-      this.stuckTimer += 1 / 60;
+      this.stuckTimer += dt;
       if (this.stuckTimer > 1.3) {
         if (this.stuckRef.distanceTo(a.pos) < 0.6) {
           this.stuckCount++;
