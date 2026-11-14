@@ -4,6 +4,8 @@ class InputManager {
   pressed = new Set<string>();
   released = new Set<string>();
   buttons = new Set<number>();
+  virtualKeys = new Set<string>();
+  virtualButtons = new Set<number>();
   bPressed = new Set<number>();
   bReleased = new Set<number>();
   dx = 0;
@@ -32,7 +34,7 @@ class InputManager {
       this.released.add(e.code);
       this.keyHandlers.forEach((h) => h(e.code, false, e));
     });
-    window.addEventListener('blur', () => { this.keys.clear(); this.buttons.clear(); });
+    window.addEventListener('blur', () => { this.keys.clear(); this.buttons.clear(); this.virtualKeys.clear(); this.virtualButtons.clear(); });
     window.addEventListener('mousedown', (e) => {
       this.buttons.add(e.button);
       this.bPressed.add(e.button);
@@ -69,9 +71,18 @@ class InputManager {
   exitLock() {
     if (document.pointerLockElement) document.exitPointerLock();
   }
-  down(code: string) { return this.keys.has(code); }
+  setVirtualKey(code: string, down: boolean) {
+    if (down && !this.virtualKeys.has(code)) this.pressed.add(code);
+    if (down) this.virtualKeys.add(code); else { this.virtualKeys.delete(code); this.released.add(code); }
+  }
+  setVirtualMouse(button: number, down: boolean) {
+    if (down && !this.virtualButtons.has(button)) this.bPressed.add(button);
+    if (down) this.virtualButtons.add(button); else { this.virtualButtons.delete(button); this.bReleased.add(button); }
+  }
+  addLookDelta(dx: number, dy: number) { this.dx += dx; this.dy += dy; }
+  down(code: string) { return this.keys.has(code) || this.virtualKeys.has(code); }
   hit(code: string) { return this.pressed.has(code); }
-  mouse(b: number) { return this.buttons.has(b); }
+  mouse(b: number) { return this.buttons.has(b) || this.virtualButtons.has(b); }
   mouseHit(b: number) { return this.bPressed.has(b); }
   endFrame() {
     this.pressed.clear();
