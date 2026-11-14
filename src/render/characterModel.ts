@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { fabricTex } from './textures';
 
 export type TeamId = 'T' | 'CT';
@@ -43,7 +44,7 @@ function mesh(geo: THREE.BufferGeometry, m: THREE.Material, parent: THREE.Object
   return o;
 }
 const cap = (r: number, len: number) => new THREE.CapsuleGeometry(r, len, 4, 10);
-const box = (w: number, h: number, d: number) => new THREE.BoxGeometry(w, h, d);
+const box = (w: number, h: number, d: number) => new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d) * 0.16);
 
 interface Limb { root: THREE.Group; mid: THREE.Group }
 
