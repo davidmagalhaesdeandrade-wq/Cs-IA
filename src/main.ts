@@ -11,7 +11,8 @@ import { el } from './core/util';
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const uiRoot = document.getElementById('ui') as HTMLDivElement;
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouchDevice, powerPreference: isTouchDevice ? 'low-power' : 'high-performance' });
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
@@ -20,7 +21,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 function applyRenderSettings() {
   const d = settings.data;
-  const base = Math.min(2, devicePixelRatio || 1);
+  const base = Math.min(isTouchDevice ? 1.25 : 2, devicePixelRatio || 1);
   renderer.setPixelRatio(base * d.renderScale * (d.quality === 'low' ? 0.75 : 1));
   renderer.setSize(innerWidth, innerHeight, false);
   if (renderer.shadowMap.enabled !== d.shadows) {
@@ -31,7 +32,9 @@ function applyRenderSettings() {
   if (session) {
     const sun = session.map.sun;
     sun.castShadow = d.shadows;
-    const sz = d.quality === 'high' ? 4096 : d.quality === 'medium' ? 2048 : 1024;
+    const sz = isTouchDevice
+      ? (d.quality === 'high' ? 1024 : d.quality === 'medium' ? 512 : 256)
+      : (d.quality === 'high' ? 4096 : d.quality === 'medium' ? 2048 : 1024);
     if (sun.shadow.mapSize.x !== sz) {
       sun.shadow.mapSize.set(sz, sz);
       sun.shadow.map?.dispose();
