@@ -14,7 +14,7 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0d10; color: var(--txt); font-family: var(--font); user-select: none; }
-#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+#game { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; }
 #ui { position: fixed; inset: 0; pointer-events: none; }
 #ui > * { pointer-events: auto; }
 button { font-family: var(--font); cursor: pointer; border: none; background: none; color: inherit; }
@@ -470,10 +470,127 @@ kbd { display: inline-block; min-width: 40px; padding: 3px 10px; background: #2a
   .touch-controls { display: block; }
   .game-ui { touch-action: none; }
   #game { touch-action: none; }
+  button { touch-action: manipulation; }
   .hud { transform-origin: top left; }
   .touch-actions { grid-template-columns: repeat(3, 46px); gap: 7px; }
   .touch-actions button { width: 46px; height: 44px; font-size: 13px; }
   .touch-actions .touch-fire { width: 76px; height: 76px; }
   .touch-stick-zone { width: 126px; height: 126px; }
   .touch-stick { left: 34px; top: 34px; }
+}
+
+/* Responsive front end: keep every menu reachable on phones and small tablets. */
+@media (max-width: 900px) {
+  .menu-left { width: 210px; }
+  .menu-right { width: 270px; }
+  .menu-bottom .mb-r { display: none; }
+  .mt-status { display: none; }
+}
+
+@media (max-width: 760px) {
+  html, body { height: 100%; height: 100dvh; }
+  .menu-top { height: 56px; padding: 0 max(10px, env(safe-area-inset-left)); gap: 8px; }
+  .logo { font-size: 14px; letter-spacing: 1px; gap: 3px; white-space: nowrap; }
+  .logo-mark { width: 17px; height: 17px; border-width: 2px; margin-right: 4px; }
+  .logo i { font-size: 17px; }
+  .mt-nav { flex: 1; min-width: 0; justify-content: flex-end; gap: 0; overflow-x: auto; scrollbar-width: none; }
+  .mt-nav::-webkit-scrollbar { display: none; }
+  .mt-nav button { flex: 0 0 auto; padding: 0 9px; font-size: 11px; letter-spacing: .5px; white-space: nowrap; }
+  .mt-nav .nav-play { font-size: 13px; }
+  .mt-nav button::after { left: 9px; right: 9px; bottom: 8px; }
+  .mt-nav .tag { display: none; }
+  .menu-left { display: none; }
+  .menu-right { left: max(14px, env(safe-area-inset-left)); right: max(14px, env(safe-area-inset-right)); top: auto; bottom: max(42px, env(safe-area-inset-bottom)); width: auto; gap: 8px; }
+  .profile { align-items: center; padding: 9px 11px; }
+  .pf-av { width: 42px; height: 42px; font-size: 22px; }
+  .pf-name { font-size: 17px; }
+  .pf-rank { font-size: 11px; margin: 0 0 3px; }
+  .pf-lvl { font-size: 10px; }
+  .pf-stats, .pf-equipped { display: none; }
+  .big-play { height: 64px; margin-top: 0; }
+  .big-play span { font-size: 27px; letter-spacing: 4px; }
+  .big-play small { font-size: 10px; }
+  .menu-bottom { height: 28px; padding: 0 max(10px, env(safe-area-inset-left)); font-size: 9px; letter-spacing: .3px; }
+  .menu-bottom .mb-off { gap: 5px; }
+  .menu-bottom .mb-off i { width: 6px; height: 6px; }
+  .menu-screens { inset: 56px 0 28px; }
+  .screen { overflow: auto; overscroll-behavior: contain; }
+  .screen-head { position: sticky; top: 0; z-index: 2; flex: 0 0 auto; gap: 8px; padding: 10px 12px; background: rgba(12,15,20,.96); }
+  .screen-head h1 { font-size: 20px; letter-spacing: 1px; }
+  .screen-head > span { display: none; }
+  .screen-head .close { padding: 7px 10px; font-size: 11px; white-space: nowrap; }
+  .ms-body { flex: 1 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 12px; overflow: visible; }
+  .ms-maps { flex: 0 0 auto; min-height: 0; max-height: 27dvh; overflow: auto; }
+  .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .map-card { aspect-ratio: 16 / 10; }
+  .mc-name { font-size: 16px; }
+  .mc-theme { font-size: 10px; }
+  .mc-status { top: 4px; right: 4px; padding: 2px 4px; font-size: 8px; letter-spacing: 0; }
+  .ms-side { width: 100%; flex: 0 0 auto; gap: 10px; overflow: visible; }
+  .ms-preview { display: none; }
+  .ms-group .opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ms-group .opt { min-width: 0; padding: 9px 4px; font-size: 10px; letter-spacing: 0; }
+  .ms-group:last-of-type .opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .start-btn { flex: 0 0 auto; min-height: 54px; height: 54px; margin-top: 2px; font-size: 20px; letter-spacing: 2px; }
+  .inv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px; }
+  .inv-card { min-width: 0; }
+  .inv-img { height: 100px; }
+  .inv-img img { max-width: 94%; max-height: 90px; }
+  .inv-info { padding: 7px 8px 5px; }
+  .inv-s { font-size: 15px; }
+  .inv-actions { padding: 5px 7px 8px; }
+  .inv-actions button { font-size: 10px; }
+  .buy-panel { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); overflow: auto; padding: 10px; }
+  .buy-head { gap: 10px; flex-wrap: wrap; }
+  .buy-money { font-size: 21px; }
+  .buy-time { font-size: 13px; }
+  .buy-team { font-size: 10px; }
+  .buy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .buy-col-title { font-size: 16px; }
+  .buy-item { height: 76px; }
+  .bi-name { font-size: 11px; }
+  .pause-panel { width: calc(100vw - 32px); }
+  .pause-panel button { min-height: 48px; }
+  .me-panel { max-height: calc(100dvh - 24px); overflow: auto; padding: 16px 12px; }
+  .me-title { font-size: clamp(34px, 12vw, 56px); letter-spacing: 4px; }
+  .me-score { font-size: 24px; }
+  .me-stats b { font-size: 20px; }
+  .me-stats small { font-size: 8px; letter-spacing: .5px; }
+  .me-table { font-size: 11px; }
+  .me-btns { flex-wrap: wrap; }
+  .me-btns button { flex: 1 1 140px; padding: 12px 8px; font-size: 13px; }
+  .hud-scoreboard { max-height: 88dvh; overflow: auto; padding: 8px; }
+  .sb-team table { font-size: 11px; }
+  .sb-team th { font-size: 8px; padding: 3px 2px; }
+  .sb-team td { padding: 4px 2px; }
+  .sb-name { width: auto; }
+  .hud-radar-wrap { transform: scale(.78); transform-origin: top left; }
+}
+
+@media (max-width: 400px) {
+  .mt-nav button { padding: 0 6px; font-size: 10px; }
+  .logo { font-size: 12px; }
+  .logo-mark { width: 14px; height: 14px; margin-right: 2px; }
+  .ms-group .opt { font-size: 9px; }
+  .touch-actions { right: max(10px, env(safe-area-inset-right)); }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .menu-left { display: none; }
+  .menu-right { top: 68px; right: 14px; bottom: 40px; width: 250px; }
+  .profile { padding: 8px; }
+  .pf-equipped { display: none; }
+  .big-play { height: 56px; }
+  .menu-screens { inset: 56px 0 28px; }
+  .ms-body { padding: 8px 12px; gap: 10px; }
+  .ms-maps { max-height: 23dvh; }
+  .ms-side { gap: 6px; }
+  .ms-group .ms-label { margin-bottom: 4px; }
+  .ms-group .opt { padding: 6px 4px; }
+  .start-btn { min-height: 42px; height: 42px; font-size: 16px; }
+  .touch-stick-zone { width: 112px; height: 112px; }
+  .touch-stick { left: 26px; top: 26px; }
+  .touch-actions { grid-template-columns: repeat(5, 40px); gap: 5px; padding-right: 64px; }
+  .touch-actions button { width: 40px; height: 38px; font-size: 11px; }
+  .touch-actions .touch-fire { width: 58px; height: 58px; }
 }
