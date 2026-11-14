@@ -61,9 +61,9 @@ export class InventoryScreen {
   }
 
   equip(id: string) {
-    skinManager.equip(id);
-    audio.ui('equip');
     const s = SKINS.find((x) => x.id === id)!;
+    if (!s || !skinManager.equip(id)) return;
+    audio.ui('equip');
     this.render();
     this.toast(`✔ ${WEAPONS[s.weapon].name} | ${s.name} equipada`);
     this.onEquip();

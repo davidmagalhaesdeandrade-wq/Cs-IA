@@ -111,23 +111,28 @@ class SkinManager {
   constructor() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) this.equipped = JSON.parse(raw);
+      if (!raw) return;
+      const parsed: unknown = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
+      for (const [weapon, id] of Object.entries(parsed as Record<string, unknown>))
+        if (typeof id === 'string' && skinById(id)?.weapon === weapon) this.equipped[weapon] = id;
     } catch { /* */ }
   }
   get(weapon: string): string {
     const id = this.equipped[weapon];
-    if (id && skinById(id)) return id;
+    if (id && skinById(id)?.weapon === weapon) return id;
     return `${weapon}_default`;
   }
   pattern(weapon: string): Pattern {
     const s = skinById(this.get(weapon));
     return s ? s.pattern : 'default';
   }
-  equip(skinId: string) {
+  equip(skinId: string): boolean {
     const s = skinById(skinId);
-    if (!s) return;
+    if (!s) return false;
     this.equipped[s.weapon] = s.id;
     try { localStorage.setItem(KEY, JSON.stringify(this.equipped)); } catch { /* */ }
+    return true;
   }
 }
 export const skinManager = new SkinManager();

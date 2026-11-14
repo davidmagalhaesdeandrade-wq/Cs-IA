@@ -20,7 +20,7 @@ import { audio } from '../core/Audio';
 import { settings } from '../core/Settings';
 import { clamp, damp, dirFromYawPitch, el, pick, rand, shuffle, yawTo } from '../core/util';
 import { WEAPONS } from '../data/weapons';
-import { skinManager } from '../data/skins';
+import { skinById, skinManager } from '../data/skins';
 import { loadAgents } from '../ui/Loadout';
 
 export interface MatchConfig {
@@ -510,7 +510,7 @@ export class GameSession {
 
   // ---------------------------------------------------------------- drops
   dropWeaponAt(inst: WeaponInst, pos: THREE.Vector3, vel = new THREE.Vector3()) {
-    const mesh = buildWeapon(inst.def.id, 'default');
+    const mesh = buildWeapon(inst.def.id, skinById(inst.skin)?.pattern ?? 'default');
     mesh.traverse((o) => { o.castShadow = true; });
     mesh.position.copy(pos);
     mesh.rotation.set(0, Math.random() * 6, Math.PI / 2);

@@ -68,7 +68,8 @@ export class PlayerController {
     const w = a.weapon;
     w.reloading = false;
     this.zoom = 0;
-    this.s.viewmodel.setWeapon(w.def.id, skinById(skinManager.get(w.def.id))?.pattern ?? 'default');
+    const skin = skinById(w.skin) ?? skinById(skinManager.get(w.def.id));
+    this.s.viewmodel.setWeapon(w.def.id, skin?.pattern ?? 'default');
     w.nextFire = Math.max(w.nextFire, this.s.time + w.def.equipTime * 0.85);
     audio.equip(w.def.category);
     this.cancelInteract();
