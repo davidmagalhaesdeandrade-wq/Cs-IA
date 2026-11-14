@@ -149,6 +149,7 @@ export class GameSession {
       <div class="touch-actions">
         <button data-touch-key="Space" aria-label="Pular">↑</button>
         <button data-touch-key="ControlLeft" aria-label="Agachar">⌄</button>
+        <button data-touch-key="ShiftLeft" aria-label="Andar em silêncio">SHIFT</button>
         <button data-touch-key="KeyR" aria-label="Recarregar">R</button>
         <button data-touch-key="KeyF" aria-label="Inspecionar">F</button>
         <button data-touch-key="KeyE" aria-label="Interagir">E</button>
