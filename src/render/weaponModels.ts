@@ -313,63 +313,81 @@ function buildPistol(m: Mats, kind: 'glock' | 'usps' | 'deagle') {
   return g;
 }
 
-function buildKnife(m: Mats) {
+function buildKnife(m: Mats, pattern: Pattern) {
   const g = new THREE.Group();
+  // Os acabamentos especiais também definem a silhueta da faca equipada:
+  // Fade = karambit, Tiger = butterfly, Blue Steel = stiletto.
+  const style = pattern === 'fade' ? 'karambit' : pattern === 'tiger' ? 'butterfly' : pattern === 'bluesteel' ? 'stiletto' : 'classic';
+  g.userData.knifeStyle = style;
 
-  // Empunhadura ergonômica com núcleo, revestimento e ranhuras.
   const grip = new THREE.Group();
-  R(grip, 0.027, 0.036, 0.145, m.furniture, 0, -0.004, 0.045, -0.08);
-  R(grip, 0.029, 0.039, 0.105, m.rubber, 0, -0.004, 0.055, -0.08);
-  for (let i = 0; i < 6; i++) {
-    B(grip, 0.030, 0.003, 0.006, m.dark, 0, -0.018, 0.012 + i * 0.016, -0.08);
-  }
+  const handleLength = style === 'karambit' ? 0.13 : style === 'stiletto' ? 0.16 : 0.145;
+  R(grip, 0.027, 0.036, handleLength, m.furniture, 0, -0.004, 0.045, -0.08);
+  R(grip, 0.029, 0.039, handleLength * 0.73, m.rubber, 0, -0.004, 0.055, -0.08);
+  for (let i = 0; i < 6; i++) B(grip, 0.030, 0.003, 0.006, m.dark, 0, -0.018, 0.012 + i * 0.016, -0.08);
   R(grip, 0.034, 0.012, 0.018, m.metal, 0, -0.002, -0.035);
   C(grip, 0.014, 0.012, m.metal, 0, -0.004, 0.122);
   const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), m.metal);
   add(grip, pommel, 0, -0.004, 0.132);
   g.add(grip);
 
-  // Guarda transversal e pequenos rebites.
-  R(g, 0.068, 0.014, 0.018, m.metal, 0, -0.001, -0.035, 0, 0, -0.06);
+  if (style === 'karambit') {
+    // Anel de dedo e lâmina curva em gancho.
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.006, 8, 20), m.metal);
+    ring.position.set(0, -0.004, 0.145);
+    grip.add(ring);
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.006, -0.035), new THREE.Vector3(0, 0.025, -0.105),
+      new THREE.Vector3(0, 0.055, -0.17), new THREE.Vector3(0, 0.075, -0.19),
+      new THREE.Vector3(0, 0.045, -0.205), new THREE.Vector3(0, 0.008, -0.18)
+    ]);
+    const blade = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.012, 8, false), m.blade);
+    blade.scale.set(1.0, 1.0, 0.8);
+    blade.name = 'blade';
+    g.add(blade);
+    const edge = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.003, 6, false), m.accent);
+    edge.position.x = 0.009;
+    g.add(edge);
+    R(g, 0.07, 0.014, 0.018, m.metal, 0, -0.001, -0.035);
+  } else if (style === 'butterfly') {
+    // Duas talas articuladas, pivôs visíveis e lâmina central.
+    const hinge = new THREE.Group();
+    hinge.name = 'butterflyHinge';
+    hinge.position.set(0, 0, -0.035);
+    g.add(hinge);
+    for (const side of [-1, 1]) {
+      R(hinge, 0.018, 0.026, 0.15, m.furniture, side * 0.025, -0.004, 0.07, side * 0.08);
+      for (let i = 0; i < 4; i++) B(hinge, 0.019, 0.003, 0.006, m.accent, side * 0.025, -0.018, 0.02 + i * 0.025);
+      const pivot = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.012, 12), m.metal);
+      pivot.rotation.z = Math.PI / 2;
+      add(hinge, pivot, side * 0.025, 0.012, 0.0);
+    }
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.027, 0.22), m.blade);
+    blade.position.set(0, 0.006, -0.17);
+    blade.name = 'blade';
+    hinge.add(blade);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.045, 5), m.blade);
+    tip.rotation.x = -Math.PI / 2;
+    tip.position.set(0, 0.006, -0.3);
+    hinge.add(tip);
+  } else {
+    // Lâmina reta de perfil estreito para stiletto e faca clássica.
+    const bladeLength = style === 'stiletto' ? 0.27 : 0.215;
+    const bladeWidth = style === 'stiletto' ? 0.012 : 0.019;
+    const blade = new THREE.Mesh(new THREE.CylinderGeometry(0.002, bladeWidth, bladeLength, 6, 1), m.blade);
+    blade.rotation.x = Math.PI / 2;
+    blade.position.set(0, 0.004, -0.035 - bladeLength * 0.48);
+    blade.name = 'blade';
+    g.add(blade);
+    const fuller = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.002, bladeLength * 0.62), m.dark);
+    fuller.position.set(0, 0.014, -0.06 - bladeLength * 0.34);
+    g.add(fuller);
+    R(g, 0.068, 0.014, 0.018, m.metal, 0, -0.001, -0.035, 0, 0, -0.06);
+  }
   for (const x of [-0.021, 0.021]) {
     const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.0035, 8, 6), m.accent);
     add(g, rivet, x, 0.016, 0.055);
   }
-
-  // Lâmina de perfil afilado com dorso e ponta definidos.
-  const sh = new THREE.Shape();
-  sh.moveTo(-0.022, -0.014);
-  sh.lineTo(-0.022, 0.012);
-  sh.lineTo(0.018, 0.019);
-  sh.lineTo(0.145, 0.017);
-  sh.quadraticCurveTo(0.184, 0.012, 0.215, -0.004);
-  sh.lineTo(0.174, -0.012);
-  sh.lineTo(0.035, -0.018);
-  sh.closePath();
-  const geo = new THREE.ExtrudeGeometry(sh, {
-    depth: 0.005,
-    bevelEnabled: true,
-    bevelThickness: 0.002,
-    bevelSize: 0.002,
-    bevelSegments: 2,
-    curveSegments: 8
-  });
-  geo.translate(0, 0, -0.0025);
-  const pos = geo.attributes.position as THREE.BufferAttribute;
-  const uv = new Float32Array(pos.count * 2);
-  for (let i = 0; i < pos.count; i++) {
-    uv[i * 2] = (pos.getX(i) + 0.03) / 0.25;
-    uv[i * 2 + 1] = (pos.getY(i) + 0.025) / 0.05;
-  }
-  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  const blade = new THREE.Mesh(geo, m.blade);
-  add(g, blade, 0, 0.002, -0.045, 0, Math.PI / 2, 0, 'blade');
-
-  // Canal central e detalhe escuro do ricasso.
-  const fuller = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.002, 0.0015), m.dark);
-  add(g, fuller, 0.0, 0.014, -0.095, 0, 0, 0);
-  B(g, 0.035, 0.018, 0.008, m.dark, 0, 0.002, -0.039);
-  muzzle(g, 0, 0, -0.25);
   return g;
 }
 
@@ -512,7 +530,7 @@ export function buildWeapon(id: string, pattern: Pattern = 'default'): THREE.Gro
     case 'glock': g = buildPistol(m, 'glock'); break;
     case 'usps': g = buildPistol(m, 'usps'); break;
     case 'deagle': g = buildPistol(m, 'deagle'); break;
-    case 'knife': g = buildKnife(m); break;
+    case 'knife': g = buildKnife(m, pattern); break;
     case 'mac10': g = buildSMG(m, 'mac10'); break;
     case 'mp9': g = buildSMG(m, 'mp9'); break;
     case 'p90': g = buildSMG(m, 'p90'); break;
