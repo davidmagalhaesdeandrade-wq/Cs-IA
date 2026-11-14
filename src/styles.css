@@ -340,6 +340,8 @@ kbd { display: inline-block; min-width: 40px; padding: 3px 10px; background: #2a
 .hud-ammo .sep { font-size: 32px; color: rgba(255,255,255,.5); margin: 0 8px; }
 .hud-ammo .res { font-size: 26px; color: #ddd; }
 .hud-wname { font-size: 14px; letter-spacing: 1px; color: #ddd; }
+.hud-inspect { display: none; align-items: center; gap: 7px; margin: 8px 0 0 auto; padding: 7px 10px; border: 1px solid rgba(238,184,92,.48); border-radius: 8px; color: #f4d49d; background: rgba(15,19,24,.76); font: 700 10px/1 sans-serif; letter-spacing: 1px; cursor: pointer; pointer-events: auto; }
+.hud-inspect kbd { padding: 3px 5px; border-radius: 4px; color: #fff; background: rgba(255,255,255,.12); font: inherit; }
 .hud-scope { position: absolute; inset: 0; display: none; background: radial-gradient(circle at center, transparent 0, transparent 34vh, rgba(0,0,0,1) 34.3vh); }
 .scope-ring { position: absolute; left: 50%; top: 50%; width: 68vh; height: 68vh; transform: translate(-50%,-50%); border-radius: 50%; box-shadow: 0 0 40px 10px rgba(0,0,0,.8) inset; }
 .scope-h { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #000; }
@@ -465,9 +467,11 @@ kbd { display: inline-block; min-width: 40px; padding: 3px 10px; background: #2a
 .touch-actions { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3, 52px); gap: 9px; padding-right: 90px; pointer-events: auto; }
 .touch-actions button { width: 52px; height: 48px; border: 1px solid rgba(255,255,255,.42); border-radius: 12px; color: #fff; background: rgba(13,18,26,.62); font: 700 15px/1 sans-serif; text-shadow: 0 1px 3px #000; touch-action: none; }
 .touch-actions button:active { background: rgba(90,130,185,.82); transform: scale(.96); }
+.touch-actions .touch-inspect { color: #f4d49d; border-color: rgba(238,184,92,.72); background: rgba(78,55,27,.72); font-size: 21px; }
 .touch-actions .touch-fire { position: absolute; right: 0; bottom: 0; width: 82px; height: 82px; border-radius: 50%; background: rgba(176,55,43,.72); border: 2px solid rgba(255,220,210,.75); font-size: 13px; }
 @media (pointer: coarse), (max-width: 760px) {
   .touch-controls { display: block; }
+  .hud-inspect { display: none !important; }
   .game-ui { touch-action: none; }
   #game { touch-action: none; }
   button { touch-action: manipulation; }

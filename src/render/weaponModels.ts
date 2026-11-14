@@ -408,19 +408,35 @@ function buildKnife(m: Mats, pattern: Pattern) {
       handle.position.set(side * 0.025, 0, -0.035);
       g.add(handle);
       R(handle, 0.018, 0.026, 0.15, m.furniture, 0, -0.004, 0.105, side * 0.08);
+      R(handle, 0.019, 0.006, 0.128, m.rubber, 0, 0.010, 0.105, side * 0.08);
+      for (const z of [0.065, 0.14]) {
+        const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.003, 10), m.metal);
+        screw.rotation.x = Math.PI / 2;
+        add(handle, screw, 0, 0.015, z);
+      }
       for (let i = 0; i < 4; i++) B(handle, 0.019, 0.003, 0.006, m.accent, 0, -0.018, 0.055 + i * 0.025);
       const pivot = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.012, 12), m.metal);
       pivot.rotation.z = Math.PI / 2;
       add(handle, pivot, 0, 0.012, 0);
     }
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.027, 0.22), m.blade);
-    blade.position.set(0, 0.006, -0.205);
+    const profile = new THREE.Shape();
+    profile.moveTo(0, -0.012);
+    profile.lineTo(0.16, -0.014);
+    profile.lineTo(0.245, -0.012);
+    profile.lineTo(0.285, -0.003);
+    profile.lineTo(0.265, 0.009);
+    profile.lineTo(0.17, 0.013);
+    profile.lineTo(0, 0.012);
+    profile.closePath();
+    const bladeGeo = new THREE.ExtrudeGeometry(profile, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.0015, bevelSegments: 1 });
+    bladeGeo.rotateY(Math.PI / 2);
+    const blade = new THREE.Mesh(bladeGeo, m.blade);
+    blade.position.set(-0.004, 0.006, -0.035);
     blade.name = 'blade';
     g.add(blade);
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.013, 0.045, 5), m.blade);
-    tip.rotation.x = -Math.PI / 2;
-    tip.position.set(0, 0.006, -0.335);
-    g.add(tip);
+    const fuller = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.002, 0.19), m.dark);
+    fuller.position.set(0.005, 0.008, -0.16);
+    g.add(fuller);
   } else if (style === 'm9') {
     // Broad clip-point bayonet with a stepped guard and a forged spine.
     R(g, 0.09, 0.014, 0.025, m.metal, 0, 0.0, -0.035);
@@ -462,6 +478,11 @@ function buildKnife(m: Mats, pattern: Pattern) {
     const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.0035, 8, 6), m.accent);
     add(g, rivet, x, 0.016, 0.055);
   }
+  // The three specialist silhouettes use distinct in-world scales to keep
+  // blade + handle proportions close to a practical ~33–36 cm knife.
+  if (style === 'karambit') g.scale.setScalar(0.82);
+  else if (style === 'butterfly') g.scale.setScalar(0.74);
+  else if (style === 'm9') g.scale.setScalar(0.68);
   return g;
 }
 

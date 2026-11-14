@@ -249,7 +249,7 @@ export class PlayerController {
       this.equip(order[i]);
     }
     if (input.hit('KeyR')) this.reload();
-    if (input.hit('KeyF') && !w.reloading && vm.state === 'idle') vm.play('inspect', w.def.category === 'knife' ? 2.6 : 3.4);
+    if (input.hit('KeyF')) s.inspectWeapon();
     if (input.hit('KeyG')) s.dropActive(a);
 
     // interaction (plant / defuse / pickup)

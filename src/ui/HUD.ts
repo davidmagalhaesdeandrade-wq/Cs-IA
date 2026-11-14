@@ -67,6 +67,7 @@ export class HUD {
         <div class="hud-weapons" data-k="weapons"></div>
         <div class="hud-ammo"><span class="mag" data-k="mag">20</span><span class="sep">|</span><span class="res" data-k="res">120</span></div>
         <div class="hud-wname" data-k="wname"></div>
+        <button class="hud-inspect" data-k="inspectBtn" type="button" aria-label="Inspecionar faca">⟳ <span>INSPECIONAR</span> <kbd>F</kbd></button>
       </div>
       <div class="hud-scope" data-k="scope"><div class="scope-ring"></div><div class="scope-h"></div><div class="scope-v"></div></div>
       <div class="hud-flash" data-k="flash"></div>
@@ -78,6 +79,7 @@ export class HUD {
     `;
     r.querySelectorAll<HTMLElement>('[data-k]').forEach((e) => (this.els[e.dataset.k!] = e));
     this.radar = r.querySelector('.hud-radar')!;
+    this.els.inspectBtn.addEventListener('click', () => this.s.inspectWeapon());
     this.kills = r.querySelector('.hud-killfeed')!;
     this.xh = r.querySelector('.hud-xh')!;
     this.buildCrosshair();
@@ -222,6 +224,7 @@ export class HUD {
     // weapon block
     const w = hpActor.weapon;
     const d = w.def;
+    this.els.inspectBtn.style.display = p.alive && p.slot === 'knife' && viewed === p ? 'inline-flex' : 'none';
     const showAmmo = d.mag > 0 && d.category !== 'grenade' && d.category !== 'c4';
     this.els.mag.parentElement!.style.visibility = showAmmo ? 'visible' : 'hidden';
     this.set('mag', String(w.mag));

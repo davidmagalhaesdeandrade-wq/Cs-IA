@@ -247,10 +247,10 @@ export class Viewmodel {
           a.rotation.y += 0.45 * settle - 0.35 * turn;
           a.rotation.x += 0.12 * settle;
           if (style === 'butterfly') {
-            const flourish = seg(k, 0.12, 0.28) * (1 - seg(k, 0.62, 0.8));
-            const flick = Math.sin(seg(k, 0.18, 0.62) * Math.PI * 2);
-            if (butterflyLeft) butterflyLeft.rotation.x = flick * 1.05 * flourish;
-            if (butterflyRight) butterflyRight.rotation.x = -flick * 1.05 * flourish;
+            const leftFlip = Math.sin(seg(k, 0.14, 0.46) * Math.PI);
+            const rightFlip = Math.sin(seg(k, 0.34, 0.68) * Math.PI);
+            if (butterflyLeft) butterflyLeft.rotation.x = leftFlip * Math.PI * 0.88;
+            if (butterflyRight) butterflyRight.rotation.x = -rightFlip * Math.PI * 0.88;
             a.rotation.z += 0.22 * turn;
           } else if (style === 'karambit') {
             const roll = Math.sin(seg(k, 0.18, 0.76) * Math.PI);

@@ -151,7 +151,7 @@ export class GameSession {
         <button data-touch-key="ControlLeft" aria-label="Agachar">⌄</button>
         <button data-touch-key="ShiftLeft" aria-label="Andar em silêncio">SHIFT</button>
         <button data-touch-key="KeyR" aria-label="Recarregar">R</button>
-        <button data-touch-key="KeyF" aria-label="Inspecionar">F</button>
+        <button data-touch-key="KeyF" class="touch-inspect" aria-label="Inspecionar faca ou arma" title="Inspecionar">⟳</button>
         <button data-touch-key="KeyE" aria-label="Interagir">E</button>
         <button data-touch-key="Digit1" aria-label="Arma principal">1</button>
         <button data-touch-key="Digit2" aria-label="Pistola">2</button>
@@ -210,6 +210,13 @@ export class GameSession {
       const up=()=>input.setVirtualMouse(button,false);
       b.addEventListener('pointerdown',down); b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up);
     });
+  }
+
+  inspectWeapon(): boolean {
+    const weapon = this.player.weapon;
+    if (this.state !== 'playing' || this.paused || !this.player.alive || this.buyMenu?.open || weapon.reloading || this.viewmodel.state !== 'idle') return false;
+    this.viewmodel.play('inspect', weapon.def.category === 'knife' ? 2.6 : 3.4);
+    return true;
   }
 
   // ---------------------------------------------------------------- setup helpers
