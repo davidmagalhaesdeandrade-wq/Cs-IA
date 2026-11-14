@@ -315,28 +315,61 @@ function buildPistol(m: Mats, kind: 'glock' | 'usps' | 'deagle') {
 
 function buildKnife(m: Mats) {
   const g = new THREE.Group();
-  R(g, 0.026, 0.034, 0.12, m.furniture, 0, -0.005, 0.03);
-  for (let i = 0; i < 4; i++) B(g, 0.028, 0.004, 0.006, m.dark, 0, -0.005 + 0.012, 0.0 + i * 0.025);
-  B(g, 0.05, 0.012, 0.012, m.metal, 0, -0.002, -0.035);
-  C(g, 0.012, 0.01, m.metal, 0, -0.005, 0.095);
+
+  // Empunhadura ergonômica com núcleo, revestimento e ranhuras.
+  const grip = new THREE.Group();
+  R(grip, 0.027, 0.036, 0.145, m.furniture, 0, -0.004, 0.045, -0.08);
+  R(grip, 0.029, 0.039, 0.105, m.rubber, 0, -0.004, 0.055, -0.08);
+  for (let i = 0; i < 6; i++) {
+    B(grip, 0.030, 0.003, 0.006, m.dark, 0, -0.018, 0.012 + i * 0.016, -0.08);
+  }
+  R(grip, 0.034, 0.012, 0.018, m.metal, 0, -0.002, -0.035);
+  C(grip, 0.014, 0.012, m.metal, 0, -0.004, 0.122);
+  const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), m.metal);
+  add(grip, pommel, 0, -0.004, 0.132);
+  g.add(grip);
+
+  // Guarda transversal e pequenos rebites.
+  R(g, 0.068, 0.014, 0.018, m.metal, 0, -0.001, -0.035, 0, 0, -0.06);
+  for (const x of [-0.021, 0.021]) {
+    const rivet = new THREE.Mesh(new THREE.SphereGeometry(0.0035, 8, 6), m.accent);
+    add(g, rivet, x, 0.016, 0.055);
+  }
+
+  // Lâmina de perfil afilado com dorso e ponta definidos.
   const sh = new THREE.Shape();
-  sh.moveTo(0, -0.012);
-  sh.lineTo(0, 0.02);
-  sh.lineTo(0.13, 0.024);
-  sh.quadraticCurveTo(0.18, 0.02, 0.205, -0.002);
-  sh.quadraticCurveTo(0.16, -0.012, 0.11, -0.017);
-  sh.lineTo(0.02, -0.016);
+  sh.moveTo(-0.022, -0.014);
+  sh.lineTo(-0.022, 0.012);
+  sh.lineTo(0.018, 0.019);
+  sh.lineTo(0.145, 0.017);
+  sh.quadraticCurveTo(0.184, 0.012, 0.215, -0.004);
+  sh.lineTo(0.174, -0.012);
+  sh.lineTo(0.035, -0.018);
   sh.closePath();
-  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.0015, bevelSegments: 1 });
-  geo.translate(0, 0, -0.002);
-  // planar UVs for patterns
+  const geo = new THREE.ExtrudeGeometry(sh, {
+    depth: 0.005,
+    bevelEnabled: true,
+    bevelThickness: 0.002,
+    bevelSize: 0.002,
+    bevelSegments: 2,
+    curveSegments: 8
+  });
+  geo.translate(0, 0, -0.0025);
   const pos = geo.attributes.position as THREE.BufferAttribute;
   const uv = new Float32Array(pos.count * 2);
-  for (let i = 0; i < pos.count; i++) { uv[i * 2] = pos.getX(i) / 0.21; uv[i * 2 + 1] = (pos.getY(i) + 0.02) / 0.05; }
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = (pos.getX(i) + 0.03) / 0.25;
+    uv[i * 2 + 1] = (pos.getY(i) + 0.025) / 0.05;
+  }
   geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   const blade = new THREE.Mesh(geo, m.blade);
-  add(g, blade, 0, 0.0, -0.04, 0, Math.PI / 2, 0, 'blade');
-  muzzle(g, 0, 0, -0.24);
+  add(g, blade, 0, 0.002, -0.045, 0, Math.PI / 2, 0, 'blade');
+
+  // Canal central e detalhe escuro do ricasso.
+  const fuller = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.002, 0.0015), m.dark);
+  add(g, fuller, 0.0, 0.014, -0.095, 0, 0, 0);
+  B(g, 0.035, 0.018, 0.008, m.dark, 0, 0.002, -0.039);
+  muzzle(g, 0, 0, -0.25);
   return g;
 }
 
