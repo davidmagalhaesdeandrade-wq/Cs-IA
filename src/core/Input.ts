@@ -74,6 +74,7 @@ class InputManager {
   setVirtualKey(code: string, down: boolean) {
     if (down && !this.virtualKeys.has(code)) this.pressed.add(code);
     if (down) this.virtualKeys.add(code); else { this.virtualKeys.delete(code); this.released.add(code); }
+    this.keyHandlers.forEach((h) => h(code, down, null as any));
   }
   setVirtualMouse(button: number, down: boolean) {
     if (down && !this.virtualButtons.has(button)) this.bPressed.add(button);
