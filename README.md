@@ -25,6 +25,12 @@ Build de produção: `npm run build` e depois `npm run preview`.
 | 1 2 3 4 5 | Primária, pistola, faca, granadas, C4 |
 | F / Q | Inspecionar / última arma |
 
+## Controles no celular
+- Joystick virtual à esquerda: movimentação em todas as direções.
+- Arraste a área direita da tela: câmera e mira.
+- Botões na tela: disparo, mira secundária, pulo, agachar, recarregar, inspecionar, interagir, pausar e troca rápida de equipamento (1–5).
+- A interface adapta o tamanho dos controles e reduz a resolução de renderização em telas touch para ajudar no desempenho.
+
 ## Conteúdo
 - Menu principal 3D, seleção de mapas (só Dust II jogável), inventário com skins e visualizador 3D, equipamentos (agentes), configurações salvas.
 - Dust II: base TR/CT, Long A, Short/Catwalk, Meio, Túneis, Portas B, bombsites A e B.
