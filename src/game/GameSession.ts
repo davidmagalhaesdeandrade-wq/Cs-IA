@@ -152,6 +152,11 @@ export class GameSession {
         <button data-touch-key="KeyR" aria-label="Recarregar">R</button>
         <button data-touch-key="KeyF" aria-label="Inspecionar">F</button>
         <button data-touch-key="KeyE" aria-label="Interagir">E</button>
+        <button data-touch-key="Digit1" aria-label="Arma principal">1</button>
+        <button data-touch-key="Digit2" aria-label="Pistola">2</button>
+        <button data-touch-key="Digit3" aria-label="Faca">3</button>
+        <button data-touch-key="Digit4" aria-label="Granada">4</button>
+        <button data-touch-key="Digit5" aria-label="C4">5</button>
         <button data-touch-key="Escape" aria-label="Pausar">Ⅱ</button>
         <button data-touch-mouse="2" aria-label="Mira secundária">AIM</button>
         <button data-touch-mouse="0" class="touch-fire" aria-label="Atirar">FIRE</button>
