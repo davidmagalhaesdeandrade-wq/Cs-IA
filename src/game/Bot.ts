@@ -283,12 +283,22 @@ export class Bot {
         if (this.p.cover && a.hp < 40 && this.stateT > 1 && Math.random() < dt * 0.8) {
           if (this.findCover(t)) break;
         }
-        // grenade
+        // Tactical utility: smoke to break enemy sightlines when pressured.
         this.grenadeCD -= dt;
         if (this.grenadeCD <= 0 && visible && a.grenades.length) {
-          const he = a.grenades.find((g) => g.def.id === 'he' || g.def.id === 'flash');
           const dist = a.pos.distanceTo(t.pos);
-          if (he && dist > 8 && dist < 26) {
+          const smoke = a.grenades.find((g) => g.def.id === 'smoke');
+          const he = a.grenades.find((g) => g.def.id === 'he' || g.def.id === 'flash');
+          if (smoke && a.hp <= 55 && dist > 10 && dist < 30) {
+            this.grenadeCD = rand(13, 20);
+            const savePitch = a.pitch;
+            a.yaw = yawTo(a.pos, t.pos);
+            a.pitch = 0.12 + dist * 0.006;
+            s.grenades.throw(a, 'smoke', Math.min(1, dist / 24 + 0.25));
+            a.pitch = savePitch;
+            a.grenades.splice(a.grenades.indexOf(smoke), 1);
+            if (this.findCover(t)) break;
+          } else if (he && dist > 8 && dist < 26) {
             this.grenadeCD = rand(10, 20);
             const savePitch = a.pitch;
             a.yaw = yawTo(a.pos, t.pos);
