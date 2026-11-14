@@ -12,6 +12,8 @@ const FILTERS: [string, string, (s: SkinDef) => boolean][] = [
   ['rifle', 'RIFLES', (s) => WEAPONS[s.weapon].category === 'rifle'],
   ['pistol', 'PISTOLAS', (s) => WEAPONS[s.weapon].category === 'pistol'],
   ['sniper', 'SNIPERS', (s) => WEAPONS[s.weapon].category === 'sniper'],
+  ['smg', 'SMGS', (s) => WEAPONS[s.weapon].category === 'smg'],
+  ['heavy', 'ESCOPETAS', (s) => WEAPONS[s.weapon].category === 'heavy'],
   ['knife', 'FACAS', (s) => WEAPONS[s.weapon].category === 'knife']
 ];
 
