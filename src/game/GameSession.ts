@@ -77,6 +77,8 @@ export class GameSession {
   private unsub: (() => void)[] = [];
   private specCam = new THREE.Vector3();
   private agents: Record<'T' | 'CT', string>;
+  private touchControls: HTMLDivElement | null = null;
+  private touchCleanup: (() => void)[] = [];
   onExit: (action: 'menu' | 'restart') => void;
 
   constructor(renderer: THREE.WebGLRenderer, config: MatchConfig, uiRoot: HTMLElement, onExit: (a: 'menu' | 'restart') => void) {
@@ -126,6 +128,7 @@ export class GameSession {
     this.ui.appendChild(this.introEl);
     this.lockEl = el('div', 'lockhint', 'CLIQUE PARA CONTINUAR');
     this.ui.appendChild(this.lockEl);
+    this.createTouchControls();
 
     this.unsub.push(this.onKey.bind(this) as any);
     input.keyHandlers.push(this.keyHandler);
@@ -136,6 +139,68 @@ export class GameSession {
     this.hud.root.style.opacity = '0';
     audio.startAmbient();
     this.resize();
+  }
+
+  private createTouchControls() {
+    if (!('ontouchstart' in window) && navigator.maxTouchPoints < 1) return;
+    const root = el('div', 'touch-controls', `
+      <div class="touch-stick-zone"><div class="touch-stick"><i></i></div></div>
+      <div class="touch-look-zone" aria-label="Área para mover a câmera"></div>
+      <div class="touch-actions">
+        <button data-touch-key="Space" aria-label="Pular">↑</button>
+        <button data-touch-key="ControlLeft" aria-label="Agachar">⌄</button>
+        <button data-touch-key="KeyR" aria-label="Recarregar">R</button>
+        <button data-touch-key="KeyF" aria-label="Inspecionar">F</button>
+        <button data-touch-mouse="0" class="touch-fire" aria-label="Atirar">FIRE</button>
+      </div>`);
+    this.ui.appendChild(root);
+    this.touchControls = root;
+    const stick = root.querySelector('.touch-stick-zone') as HTMLElement;
+    const knob = root.querySelector('.touch-stick') as HTMLElement;
+    let moveId = -1, lookId = -1, originX = 0, originY = 0, lastX = 0, lastY = 0;
+    const releaseMove = () => {
+      for (const k of ['KeyW','KeyA','KeyS','KeyD']) input.setVirtualKey(k, false);
+      knob.style.transform = 'translate(0,0)';
+      moveId = -1;
+    };
+    const move = (e: PointerEvent) => {
+      if (e.pointerId !== moveId) return;
+      const dx = e.clientX - originX, dy = e.clientY - originY;
+      const len = Math.max(1, Math.hypot(dx, dy)), scale = Math.min(1, 48 / len);
+      const x = dx * scale, y = dy * scale;
+      knob.style.transform = `translate(${x}px,${y}px)`;
+      input.setVirtualKey('KeyW', y < -12);
+      input.setVirtualKey('KeyS', y > 12);
+      input.setVirtualKey('KeyA', x < -12);
+      input.setVirtualKey('KeyD', x > 12);
+    };
+    const onMoveStart = (e: PointerEvent) => {
+      if (moveId !== -1) return;
+      e.preventDefault(); moveId = e.pointerId; originX = e.clientX; originY = e.clientY;
+      stick.setPointerCapture(e.pointerId); move(e);
+    };
+    const onMoveEnd = (e: PointerEvent) => { if (e.pointerId === moveId) releaseMove(); };
+    stick.addEventListener('pointerdown', onMoveStart);
+    stick.addEventListener('pointermove', move);
+    stick.addEventListener('pointerup', onMoveEnd);
+    stick.addEventListener('pointercancel', onMoveEnd);
+    const look = root.querySelector('.touch-look-zone') as HTMLElement;
+    look.addEventListener('pointerdown', (e) => { if (lookId !== -1) return; e.preventDefault(); lookId = e.pointerId; lastX=e.clientX; lastY=e.clientY; look.setPointerCapture(e.pointerId); });
+    look.addEventListener('pointermove', (e) => { if(e.pointerId!==lookId) return; input.addLookDelta((e.clientX-lastX)*1.35,(e.clientY-lastY)*1.35); lastX=e.clientX; lastY=e.clientY; });
+    const stopLook = (e: PointerEvent) => { if(e.pointerId===lookId) lookId=-1; };
+    look.addEventListener('pointerup', stopLook); look.addEventListener('pointercancel', stopLook);
+    root.querySelectorAll<HTMLButtonElement>('[data-touch-key]').forEach((b) => {
+      const key=b.dataset.touchKey!;
+      const down=(e:PointerEvent)=>{e.preventDefault();b.setPointerCapture(e.pointerId);input.setVirtualKey(key,true);};
+      const up=()=>input.setVirtualKey(key,false);
+      b.addEventListener('pointerdown',down); b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up);
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-touch-mouse]').forEach((b) => {
+      const button=Number(b.dataset.touchMouse);
+      const down=(e:PointerEvent)=>{e.preventDefault();b.setPointerCapture(e.pointerId);input.setVirtualMouse(button,true);};
+      const up=()=>input.setVirtualMouse(button,false);
+      b.addEventListener('pointerdown',down); b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up);
+    });
   }
 
   // ---------------------------------------------------------------- setup helpers
@@ -727,6 +792,9 @@ export class GameSession {
     input.exitLock();
     audio.stopAmbient();
     this.settingsPanel?.destroy();
+    this.touchControls?.remove();
+    for (const k of ['KeyW','KeyA','KeyS','KeyD','Space','ControlLeft','KeyR','KeyF']) input.setVirtualKey(k, false);
+    input.setVirtualMouse(0, false);
     this.ui.remove();
     this.scene.traverse((o) => {
       const m = o as THREE.Mesh;
