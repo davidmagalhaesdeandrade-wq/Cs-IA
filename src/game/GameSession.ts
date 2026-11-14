@@ -18,6 +18,7 @@ import { sharedEnv } from '../render/thumbnails';
 import { input } from '../core/Input';
 import { audio } from '../core/Audio';
 import { settings } from '../core/Settings';
+import { authUser } from '../core/Auth';
 import { clamp, damp, dirFromYawPitch, el, pick, rand, shuffle, yawTo } from '../core/util';
 import { WEAPONS } from '../data/weapons';
 import { skinById, skinManager } from '../data/skins';
@@ -79,6 +80,8 @@ export class GameSession {
   private agents: Record<'T' | 'CT', string>;
   private touchControls: HTMLDivElement | null = null;
   private touchCleanup: (() => void)[] = [];
+  private xrayEl: HTMLDivElement;
+  practicePowers = new Set<string>();
   onExit: (action: 'menu' | 'restart') => void;
 
   constructor(renderer: THREE.WebGLRenderer, config: MatchConfig, uiRoot: HTMLElement, onExit: (a: 'menu' | 'restart') => void) {
@@ -102,7 +105,7 @@ export class GameSession {
 
     // ---------- teams ----------
     let team: Team = config.team === 'random' ? (Math.random() < 0.5 ? 'T' : 'CT') : config.team;
-    this.player = new Actor(settings.data.playerName || 'Player', team, true);
+    this.player = new Actor(authUser()?.username || settings.data.playerName || 'Player', team, true);
     this.actors.push(this.player);
     const used = new Set<string>();
     const n = config.size;
@@ -120,6 +123,8 @@ export class GameSession {
     uiRoot.appendChild(this.ui);
     this.hud = new HUD(this, this.ui);
     this.buyMenu = new BuyMenu(this, this.ui);
+    this.xrayEl = el('div', 'admin-xray');
+    this.ui.appendChild(this.xrayEl);
     this.pauseEl = el('div', 'pause');
     this.ui.appendChild(this.pauseEl);
     this.endEl = el('div', 'matchend');
@@ -153,6 +158,7 @@ export class GameSession {
         <button data-touch-key="KeyR" aria-label="Recarregar">R</button>
         <button data-touch-key="KeyF" class="touch-inspect" aria-label="Inspecionar faca ou arma" title="Inspecionar">⟳</button>
         <button data-touch-key="KeyE" aria-label="Interagir">E</button>
+        ${authUser()?.role === 'admin' ? '<button data-touch-admin aria-label="Painel de administração">ADM</button>' : ''}
         <button data-touch-key="Digit1" aria-label="Arma principal">1</button>
         <button data-touch-key="Digit2" aria-label="Pistola">2</button>
         <button data-touch-key="Digit3" aria-label="Faca">3</button>
@@ -210,6 +216,7 @@ export class GameSession {
       const up=()=>input.setVirtualMouse(button,false);
       b.addEventListener('pointerdown',down); b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up); b.addEventListener('lostpointercapture',up);
     });
+    root.querySelector<HTMLButtonElement>('[data-touch-admin]')?.addEventListener('click', () => (window as any).__ts2?.openAdminPanel());
   }
 
   inspectWeapon(): boolean {
@@ -446,6 +453,7 @@ export class GameSession {
 
   // ---------------------------------------------------------------- combat routing
   damage(victim: Actor, attacker: Actor, hp: number, armorDmg: number, weapon: string, group: HitGroup | null, from: THREE.Vector3) {
+    if (victim.isPlayer && this.practicePowers.has('godmode')) return;
     if (!victim.alive || this.match.phase === 'end') return;
     const real = Math.min(victim.hp, hp);
     victim.hp -= hp;
@@ -643,6 +651,46 @@ export class GameSession {
   }
 
   // ---------------------------------------------------------------- loop
+  setPracticePower(power: string) {
+    if (!['aim-assist', 'wall-vision', 'fly', 'noclip', 'godmode'].includes(power)) return;
+    if (this.practicePowers.has(power)) this.practicePowers.delete(power); else this.practicePowers.add(power);
+    this.pc.adminFly = this.practicePowers.has('fly');
+    this.pc.adminNoclip = this.practicePowers.has('noclip');
+    if (!this.practicePowers.has('wall-vision')) this.xrayEl.replaceChildren();
+    this.hud.notice(`${power.toUpperCase()}: ${this.practicePowers.has(power) ? 'ATIVADO' : 'DESATIVADO'} · PRÁTICA LOCAL`);
+  }
+
+  private updatePractice(dt: number) {
+    if (this.practicePowers.has('aim-assist') && this.player.alive) {
+      const targets = this.actors.filter((actor) => actor.alive && actor.team !== this.player.team && !actor.isPlayer);
+      let target: Actor | null = null, distance = Infinity;
+      for (const actor of targets) { const d = actor.pos.distanceToSquared(this.player.pos); if (d < distance) { target = actor; distance = d; } }
+      if (target && distance < 55 * 55) {
+        const point = target.pos.clone().add(new THREE.Vector3(0, target.eye * 0.82, 0));
+        const yaw = yawTo(this.player.pos, point);
+        const delta = Math.atan2(Math.sin(yaw - this.player.yaw), Math.cos(yaw - this.player.yaw));
+        this.player.yaw += delta * Math.min(1, dt * 5.5);
+        const horizontal = Math.max(0.01, Math.hypot(point.x - this.player.pos.x, point.z - this.player.pos.z));
+        const pitch = Math.atan2(point.y - this.player.pos.y - this.player.eye, horizontal);
+        this.player.pitch += (pitch - this.player.pitch) * Math.min(1, dt * 5.5);
+      }
+    }
+    if (!this.practicePowers.has('wall-vision')) return;
+    const active = new Set<number>();
+    for (const actor of this.actors) {
+      if (!actor.alive || actor.team === this.player.team || actor.isPlayer) continue;
+      active.add(actor.id);
+      let marker = this.xrayEl.querySelector<HTMLElement>(`[data-actor="${actor.id}"]`);
+      if (!marker) { marker = el('div', 'admin-xray-tag'); marker.dataset.actor = String(actor.id); const label = document.createElement('span'); marker.appendChild(label); this.xrayEl.appendChild(marker); }
+      const point = actor.pos.clone().add(new THREE.Vector3(0, actor.eye * 0.85, 0)).project(this.camera);
+      marker.style.display = point.z > 1 || Math.abs(point.x) > 1.15 || Math.abs(point.y) > 1.15 ? 'none' : 'block';
+      marker.style.left = `${(point.x * 0.5 + 0.5) * innerWidth}px`;
+      marker.style.top = `${(-point.y * 0.5 + 0.5) * innerHeight}px`;
+      marker.firstElementChild!.textContent = actor.name;
+    }
+    this.xrayEl.querySelectorAll<HTMLElement>('[data-actor]').forEach((marker) => { if (!active.has(Number(marker.dataset.actor))) marker.remove(); });
+  }
+
   update(dt: number) {
     if (this.state === 'intro') {
       this.introT += dt;
@@ -670,6 +718,7 @@ export class GameSession {
     const lookOK = (input.locked || touchMode) && !this.buyMenu.open;
     this.lockEl.style.display = !input.locked && !touchMode && !this.buyMenu.open ? 'flex' : 'none';
     this.pc.update(dt, lookOK, !this.buyMenu.open);
+    this.updatePractice(dt);
     if (this.player.flash > 0) this.player.flash -= dt;
     for (const b of this.bots) b.update(dt);
     // dead bodies
@@ -813,6 +862,7 @@ export class GameSession {
     audio.stopAmbient();
     this.settingsPanel?.destroy();
     this.touchControls?.remove();
+    this.xrayEl.remove();
     for (const k of ['KeyW','KeyA','KeyS','KeyD','Space','ControlLeft','KeyR','KeyF']) input.setVirtualKey(k, false);
     input.setVirtualMouse(0, false);
     this.ui.remove();

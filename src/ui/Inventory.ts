@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { SKINS, SkinDef, RARITY_COLOR, RARITY_LABEL, skinManager } from '../data/skins';
+import { SKINS, SkinDef, RARITY_COLOR, RARITY_LABEL, skinManager, skinPrice } from '../data/skins';
 import { WEAPONS, CATEGORY_LABEL } from '../data/weapons';
 import { skinThumb } from '../render/thumbnails';
 import { buildWeapon } from '../render/weaponModels';
@@ -21,8 +21,8 @@ export class InventoryScreen {
   root: HTMLDivElement;
   filter = 'all';
   viewer: ItemViewer | null = null;
-  constructor(parent: HTMLElement, private onClose: () => void, private onEquip: () => void) {
-    this.root = el('div', 'screen inventory');
+  constructor(parent: HTMLElement, private onClose: () => void, private onEquip: () => void, private mode: 'inventory' | 'store' = 'inventory') {
+    this.root = el('div', `screen inventory ${mode}`);
     parent.appendChild(this.root);
     this.render();
     requestAnimationFrame(() => this.root.classList.add('show'));
@@ -30,7 +30,8 @@ export class InventoryScreen {
 
   render() {
     const f = FILTERS.find((x) => x[0] === this.filter)!;
-    const items = SKINS.filter(f[2]);
+    const source = this.mode === 'store' ? SKINS.filter((s) => s.pattern !== 'default') : SKINS.filter((s) => skinManager.isOwned(s.id));
+    const items = source.filter(f[2]);
     const cards = items.map((s) => {
       const eq = skinManager.get(s.weapon) === s.id;
       const w = WEAPONS[s.weapon];
@@ -38,16 +39,16 @@ export class InventoryScreen {
         <div class="inv-img"><img src="${skinThumb(s.weapon, s.pattern)}" loading="lazy"></div>
         ${eq ? '<div class="inv-eq">EQUIPADO</div>' : ''}
         <div class="inv-info"><div class="inv-w">${w.name}</div><div class="inv-s">${s.name}</div><div class="inv-cat">${CATEGORY_LABEL[w.category]} · <span style="color:${RARITY_COLOR[s.rarity]}">${RARITY_LABEL[s.rarity]}</span></div></div>
-        <div class="inv-actions"><button data-act="equip" ${eq ? 'disabled' : ''}>${eq ? 'EQUIPADO' : 'EQUIPAR'}</button><button data-act="inspect">INSPECIONAR</button></div>
+        <div class="inv-actions"><button data-act="equip" ${eq ? 'disabled' : ''}>${eq ? 'EQUIPADO' : this.mode === 'store' && !skinManager.isOwned(s.id) ? `COMPRAR · $${skinPrice(s).toLocaleString('pt-BR')}` : 'EQUIPAR'}</button><button data-act="inspect">INSPECIONAR</button></div>
         <div class="inv-rarity"></div>
       </div>`;
     }).join('');
     this.root.innerHTML = `
-      <div class="screen-head"><h1>INVENTÁRIO</h1>
+      <div class="screen-head"><h1>${this.mode === 'store' ? 'LOJA DE ARMAS' : 'INVENTÁRIO'}</h1>
         <div class="inv-tabs">${FILTERS.map(([id, l]) => `<button data-f="${id}" class="${id === this.filter ? 'active' : ''}">${l}</button>`).join('')}</div>
-        <span class="inv-count">${items.length} itens</span>
+        <span class="inv-count">${this.mode === 'store' ? `$${skinManager.credits.toLocaleString('pt-BR')} · ` : ''}${items.length} itens</span>
         <button class="close" data-act="back">✕ VOLTAR</button></div>
-      <div class="inv-grid">${cards}</div>
+      <div class="inv-grid">${cards || `<div class="inv-empty">${this.mode === 'store' ? 'Nenhuma skin nesta categoria.' : 'Nenhuma skin desta categoria no inventário. Visite a loja para desbloquear novos acabamentos.'}</div>`}</div>
       <div class="toast" data-k="toast"></div>`;
     this.root.querySelectorAll<HTMLButtonElement>('[data-f]').forEach((b) => (b.onclick = () => { audio.ui('click'); this.filter = b.dataset.f!; this.render(); }));
     (this.root.querySelector('[data-act=back]') as HTMLButtonElement).onclick = () => { audio.ui('back'); this.onClose(); };
@@ -62,8 +63,18 @@ export class InventoryScreen {
 
   equip(id: string) {
     const s = SKINS.find((x) => x.id === id)!;
-    if (!s || !skinManager.equip(id)) return;
+    if (!s) return;
+    if (this.mode === 'store' && !skinManager.isOwned(id)) {
+      if (!skinManager.buy(id)) { this.toast(`Saldo insuficiente. Necessário: $${skinPrice(s).toLocaleString('pt-BR')}`); return; }
+      audio.ui('equip');
+      this.viewer?.destroy(); this.viewer = null;
+      this.render();
+      this.toast(`✔ ${s.name} comprada e enviada ao inventário`);
+      return;
+    }
+    if (!skinManager.equip(id)) return;
     audio.ui('equip');
+    this.viewer?.destroy(); this.viewer = null;
     this.render();
     this.toast(`✔ ${WEAPONS[s.weapon].name} | ${s.name} equipada`);
     this.onEquip();
@@ -78,6 +89,7 @@ export class InventoryScreen {
 
   inspect(id: string) {
     audio.ui('click');
+    this.viewer?.destroy();
     this.viewer = new ItemViewer(this.root, id, () => { this.viewer = null; }, (sid) => this.equip(sid));
   }
 
@@ -115,7 +127,7 @@ export class ItemViewer {
         <button data-a="side" title="Vista lateral">◧</button>
         <button data-a="top" title="Vista superior">⬒</button>
         <button data-a="front" title="Vista frontal">◉</button>
-        <button data-a="equip" class="primary">${skinManager.get(s.weapon) === s.id ? 'EQUIPADO' : 'EQUIPAR'}</button>
+        <button data-a="equip" class="primary">${skinManager.get(s.weapon) === s.id ? 'EQUIPADO' : skinManager.isOwned(s.id) ? 'EQUIPAR' : `COMPRAR · $${skinPrice(s).toLocaleString('pt-BR')}`}</button>
         <button data-a="close">FECHAR</button>
       </div>
       <div class="viewer-tip">Arraste para girar · Roda do mouse para zoom</div>`;

@@ -7,6 +7,8 @@ import { MainMenu, loadProfile, saveProfile } from './ui/MainMenu';
 import { GameSession, MatchConfig } from './game/GameSession';
 import { mapArt, MAPS } from './ui/MapSelect';
 import { el } from './core/util';
+import { refreshAuth, authUser } from './core/Auth';
+import { AdminPanel } from './ui/AdminPanel';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const uiRoot = document.getElementById('ui') as HTMLDivElement;
@@ -48,6 +50,7 @@ let session: GameSession | null = null;
 let lastCfg: MatchConfig | null = null;
 
 const menu = new MainMenu(renderer, uiRoot, (cfg) => startMatch(cfg));
+void refreshAuth().then(() => menu.render());
 applyRenderSettings();
 settings.onChange(applyRenderSettings);
 window.addEventListener('resize', () => { applyRenderSettings(); session?.resize(); });
@@ -130,14 +133,66 @@ function exitSession(action: 'menu' | 'restart') {
     if (session.match.matchWinner === p.team) { prof.wins++; prof.xp += 600; }
   }
   saveProfile(prof);
+  const account = authUser();
+  if (account) {
+    const completed = session.state === 'ended';
+    const won = completed && session.match.matchWinner === p.team;
+    void fetch('/.netlify/functions/profile', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kills: Math.max(0, p.kills), matches: completed ? 1 : 0, wins: won ? 1 : 0 })
+    }).then(async (response) => { if (response.ok) { await refreshAuth(); menu.render(); } }).catch(() => {});
+  }
   session.dispose();
   session = null;
   if (action === 'restart' && lastCfg) startMatch(lastCfg);
   else menu.show();
 }
 
+let adminPanel: AdminPanel | null = null;
+function openAdminPanel(resumeAfter = !!session && !session.paused) {
+  if (authUser()?.role !== 'admin' || adminPanel) return false;
+  if (session && !session.paused) session.pause(false);
+  adminPanel = new AdminPanel(uiRoot, () => {
+    adminPanel?.destroy(); adminPanel = null;
+    if (resumeAfter && session?.paused) session.resume();
+  }, (action) => session?.setPracticePower(action), () => !!session && session.state === 'playing');
+  return true;
+}
+
+let commandBox: HTMLDivElement | null = null;
+let commandWasPaused = false;
+function openCommand() {
+  if (!session || session.state !== 'playing' || commandBox || adminPanel) return;
+  commandWasPaused = session.paused;
+  if (!session.paused) session.pause(false);
+  const box = el('div', 'admin-command', '<label>COMANDO DE JOGO</label><input maxlength="32" autocomplete="off" spellcheck="false" placeholder="/painel"><small>ENTER para executar · ESC para fechar</small><p role="status"></p>');
+  uiRoot.appendChild(box); commandBox = box;
+  const field = box.querySelector('input')!;
+  field.focus();
+  field.onkeydown = (event) => {
+    event.stopPropagation();
+    if (event.key === 'Escape') { closeCommand(); return; }
+    if (event.key !== 'Enter') return;
+    const command = field.value.trim().toLowerCase();
+    if (command === '/painel') {
+      if (authUser()?.role !== 'admin') { box.querySelector('p')!.textContent = 'Comando disponível somente para a conta administradora.'; return; }
+      closeCommand(true); openAdminPanel(!commandWasPaused); return;
+    }
+    box.querySelector('p')!.textContent = 'Comando desconhecido.';
+  };
+}
+function closeCommand(openPanel = false) {
+  commandBox?.remove(); commandBox = null;
+  if (!openPanel && !commandWasPaused && session?.paused) session.resume();
+}
+window.addEventListener('keydown', (event) => {
+  if ((event.code === 'Slash' && !event.ctrlKey && !event.metaKey) || event.code === 'F10') {
+    if (session && !commandBox) { event.preventDefault(); openCommand(); }
+  }
+});
+
 // expose for automated testing / debugging
-(window as any).__ts2 = { get session() { return session; }, menu, startMatch };
+(window as any).__ts2 = { get session() { return session; }, menu, startMatch, openAdminPanel };
 
 let last = performance.now();
 function frame(now: number) {

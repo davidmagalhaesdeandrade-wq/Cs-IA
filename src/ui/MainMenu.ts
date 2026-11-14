@@ -8,6 +8,9 @@ import { wallTex, floorSandTex, smokeTex } from '../render/textures';
 import { skinManager, skinById, RARITY_COLOR } from '../data/skins';
 import { skinThumb, sharedEnv } from '../render/thumbnails';
 import { InventoryScreen } from './Inventory';
+import { AuthScreen } from './AuthScreen';
+import { AdminPanel } from './AdminPanel';
+import { authUser } from '../core/Auth';
 import { LoadoutScreen, loadAgents } from './Loadout';
 import { SettingsPanel } from './SettingsUI';
 import { MapSelectScreen, mapArt, MAPS } from './MapSelect';
@@ -140,8 +143,12 @@ export class MainMenu {
 
   render() {
     const p = loadProfile();
-    const lvl = Math.min(40, 1 + Math.floor(p.xp / 500));
-    const rank = RANKS[Math.min(RANKS.length - 1, Math.floor(p.wins / 2))];
+    const account = authUser();
+    const playerName = account?.username || settings.data.playerName;
+    const xp = account?.xp ?? p.xp;
+    const wins = account?.wins ?? p.wins;
+    const lvl = Math.min(40, 1 + Math.floor(xp / 500));
+    const rank = account?.rank || RANKS[Math.min(RANKS.length - 1, Math.floor(wins / 2))];
     const ak = skinById(skinManager.get('ak47'))!;
     const awp = skinById('awp_dragon')!;
     this.root.innerHTML = `
@@ -151,9 +158,12 @@ export class MainMenu {
         </div>
         <nav class="mt-nav">
           <button data-nav="play" class="nav-play">JOGAR<span class="tag">NOVO</span></button>
+          <button data-nav="store">LOJA</button>
           <button data-nav="inventory">INVENTÁRIO</button>
           <button data-nav="loadout">EQUIPAMENTOS</button>
           <button data-nav="settings">CONFIGURAÇÕES</button>
+          ${authUser()?.role === 'admin' ? '<button data-nav="admin">PAINEL</button>' : ''}
+          <button data-nav="account">${authUser()?.username || 'CONTA'}</button>
           <button data-nav="quit">SAIR</button>
         </nav>
         <div class="mt-right"><span class="mt-status"><i></i>OFFLINE</span></div>
@@ -174,11 +184,11 @@ export class MainMenu {
       </div>
       <div class="menu-right">
         <div class="profile">
-          <div class="pf-av">${(settings.data.playerName || 'P')[0].toUpperCase()}</div>
-          <div class="pf-info"><div class="pf-name">${settings.data.playerName}</div><div class="pf-rank">${rank}</div>
-            <div class="pf-lvl"><span>NÍVEL ${lvl}</span><div class="pf-xp"><i style="width:${(p.xp % 500) / 5}%"></i></div></div></div>
+          <div class="pf-av">${playerName[0].toUpperCase()}</div>
+          <div class="pf-info"><div class="pf-name">${playerName}</div><div class="pf-rank">${rank}</div>
+            <div class="pf-lvl"><span>NÍVEL ${lvl}</span><div class="pf-xp"><i style="width:${(xp % 500) / 5}%"></i></div></div></div>
         </div>
-        <div class="pf-stats"><div><b>${p.matches}</b><small>PARTIDAS</small></div><div><b>${p.wins}</b><small>VITÓRIAS</small></div><div><b>${p.kills}</b><small>ABATES</small></div></div>
+        <div class="pf-stats"><div><b>${account?.matches ?? p.matches}</b><small>PARTIDAS</small></div><div><b>${wins}</b><small>VITÓRIAS</small></div><div><b>${account?.kills ?? p.kills}</b><small>ABATES</small></div></div>
         <div class="pf-equipped"><small>EQUIPADA</small><img src="${skinThumb('ak47', ak.pattern, 300, 130)}"><span style="color:${RARITY_COLOR[ak.rarity]}">AK-47 | ${ak.name}</span></div>
         <button class="big-play" data-nav="play"><span>JOGAR</span><small>DUST II · COMPETITIVO</small></button>
       </div>
@@ -201,8 +211,11 @@ export class MainMenu {
     this.root.classList.add('dim');
     if (where === 'play') this.screen = new MapSelectScreen(host, () => this.closeScreen(true), (c) => this.onPlay(c));
     else if (where === 'inventory') this.screen = new InventoryScreen(host, () => this.closeScreen(true), () => { this.refreshWeapon(); });
+    else if (where === 'store') this.screen = new InventoryScreen(host, () => this.closeScreen(true), () => { this.refreshWeapon(); }, 'store');
     else if (where === 'loadout') this.screen = new LoadoutScreen(host, () => this.closeScreen(true), () => this.refreshAgent());
     else if (where === 'settings') this.screen = new SettingsPanel(host, () => this.closeScreen(true));
+    else if (where === 'account') this.screen = new AuthScreen(host, () => this.closeScreen(true), () => this.closeScreen(true));
+    else if (where === 'admin' && authUser()?.role === 'admin') this.screen = new AdminPanel(host, () => this.closeScreen(true));
     else if (where === 'quit') this.quit(host);
   }
 

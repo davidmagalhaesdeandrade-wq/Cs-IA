@@ -87,10 +87,11 @@ export class SettingsPanel {
         const out = this.root.querySelector(`[data-out="${k}"]`);
         const f = t.fields.find((x) => x.k === k) as any;
         if (out) out.textContent = f.fmt ? f.fmt(parseFloat(i.value)) : i.value;
+        this.preview();
       };
     });
     this.root.querySelectorAll<HTMLSelectElement>('select').forEach((s) => (s.onchange = () => { (this.draft as any)[s.dataset.k!] = s.value; }));
-    this.root.querySelectorAll<HTMLInputElement>('input[type=checkbox]').forEach((c) => (c.onchange = () => { (this.draft as any)[c.dataset.k!] = c.checked; }));
+    this.root.querySelectorAll<HTMLInputElement>('input[type=checkbox]').forEach((c) => (c.onchange = () => { (this.draft as any)[c.dataset.k!] = c.checked; this.preview(); }));
     this.root.querySelectorAll<HTMLInputElement>('input[type=text]').forEach((c) => (c.oninput = () => { (this.draft as any)[c.dataset.k!] = c.value.slice(0, 16) || 'Player'; }));
     this.root.querySelectorAll<HTMLButtonElement>('.swatch').forEach((b) => (b.onclick = () => {
       (this.draft as any)[b.dataset.k!] = b.dataset.v;
@@ -122,6 +123,7 @@ export class SettingsPanel {
     pv.style.setProperty('--xs', d.crosshairSize + 'px');
     pv.style.setProperty('--xt', d.crosshairThickness + 'px');
     pv.style.setProperty('--xg', d.crosshairGap + 'px');
+    pv.classList.toggle('has-dot', d.crosshairDot);
   }
 
   private field(f: Field) {
@@ -131,7 +133,7 @@ export class SettingsPanel {
     else if (f.type === 'select') ctl = `<select data-k="${f.k}">${f.options.map(([val, l]) => `<option value="${val}" ${val === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
     else if (f.type === 'toggle') ctl = `<label class="toggle"><input type="checkbox" data-k="${f.k}" ${v ? 'checked' : ''}><span></span></label>`;
     else if (f.type === 'text') ctl = `<input type="text" maxlength="16" value="${String(v).replace(/"/g, '')}" data-k="${f.k}">`;
-    else if (f.type === 'color') ctl = f.options.map((c) => `<button class="swatch ${c === v ? 'active' : ''}" style="background:${c}" data-k="${f.k}" data-v="${c}"></button>`).join('') + `<div class="xh-preview"><i class="x-l"></i><i class="x-r"></i><i class="x-t"></i><i class="x-b"></i></div>`;
+    else if (f.type === 'color') ctl = f.options.map((c) => `<button class="swatch ${c === v ? 'active' : ''}" style="background:${c}" data-k="${f.k}" data-v="${c}"></button>`).join('') + `<div class="xh-preview"><i class="x-l"></i><i class="x-r"></i><i class="x-t"></i><i class="x-b"></i><i class="x-dot"></i></div>`;
     return `<div class="set-row"><label>${f.label}</label><div class="set-ctl">${ctl}</div></div>`;
   }
 

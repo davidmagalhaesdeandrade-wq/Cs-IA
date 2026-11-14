@@ -126,7 +126,7 @@ export class Viewmodel {
     else if (cat === 'c4') this.base.position.set(0.06, -0.24, -0.42);
     else if (cat === 'sniper') this.base.position.set(0.17, -0.19, -0.42);
     else this.base.position.set(0.17, -0.19, -0.44);
-    this.base.rotation.set(0, 0.05, 0);
+    this.base.rotation.set(0, cat === 'knife' ? Math.PI / 2 + 0.12 : 0.05, 0);
     if (cat === 'c4') this.base.rotation.set(0.5, 0.3, 0);
     this.play('equip', WEAPONS[id].equipTime);
   }
@@ -194,8 +194,8 @@ export class Viewmodel {
     if (butterflyLeft) butterflyLeft.rotation.set(0, 0, 0);
     if (butterflyRight) butterflyRight.rotation.set(0, 0, 0);
     const hand = this.supportHome.clone();
-    let rightHand = new THREE.Vector3(0, -0.055, 0.035);
     const cat = WEAPONS[this.weaponId].category;
+    let rightHand = new THREE.Vector3(cat === 'knife' ? 0.08 : 0, -0.055, 0.035);
 
     switch (this.state) {
       case 'equip': {
@@ -310,7 +310,7 @@ export class Viewmodel {
     if (this.state !== 'idle' && this.state !== 'plant' && this.t >= this.dur) this.state = 'idle';
     // arms
     const L = this.armL, R = this.armR;
-    const twoHanded = cat !== 'knife' && cat !== 'grenade';
+    const twoHanded = cat !== 'knife' && cat !== 'grenade' && cat !== 'pistol';
     L.group.visible = twoHanded || this.state === 'reload';
     this.placeArm(R, rightHand, new THREE.Vector3(0.09, -0.3, 0.42));
     if (cat === 'pistol') this.placeArm(L, hand.clone().add(new THREE.Vector3(-0.025, -0.01, -0.01)), new THREE.Vector3(-0.2, -0.28, 0.32));

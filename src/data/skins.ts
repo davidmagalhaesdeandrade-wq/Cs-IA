@@ -105,17 +105,36 @@ export const skinById = (id: string) => SKINS.find((s) => s.id === id);
 export const skinsFor = (weapon: string) => SKINS.filter((s) => s.weapon === weapon);
 
 const KEY = 'ts2_equipped_skins_v1';
+const OWNED_KEY = 'ts2_owned_skins_v1';
+const WALLET_KEY = 'ts2_skin_credits_v1';
+
+export const skinPrice = (skin: SkinDef): number => {
+  const rarityBase: Record<Rarity, number> = {
+    consumer: 0, industrial: 350, milspec: 800, restricted: 1_600,
+    classified: 3_200, covert: 6_500, gold: 12_000
+  };
+  return skin.pattern === 'default' ? 0 : rarityBase[skin.rarity] * (skin.weapon === 'knife' ? 4 : 1);
+};
 
 class SkinManager {
   equipped: Record<string, string> = {};
+  owned = new Set<string>();
+  credits = 30_000;
   constructor() {
+    this.owned = new Set(SKINS.filter((s) => s.pattern === 'default').map((s) => s.id));
+    try {
+      const owned = JSON.parse(localStorage.getItem(OWNED_KEY) || 'null');
+      if (Array.isArray(owned)) for (const id of owned) if (typeof id === 'string' && skinById(id)) this.owned.add(id);
+      const credits = Number(localStorage.getItem(WALLET_KEY));
+      if (Number.isFinite(credits) && credits >= 0) this.credits = credits;
+    } catch { /* keep a safe local default */ }
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return;
       const parsed: unknown = JSON.parse(raw);
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
       for (const [weapon, id] of Object.entries(parsed as Record<string, unknown>))
-        if (typeof id === 'string' && skinById(id)?.weapon === weapon) this.equipped[weapon] = id;
+        if (typeof id === 'string' && skinById(id)?.weapon === weapon && this.owned.has(id)) this.equipped[weapon] = id;
     } catch { /* */ }
   }
   get(weapon: string): string {
@@ -129,10 +148,28 @@ class SkinManager {
   }
   equip(skinId: string): boolean {
     const s = skinById(skinId);
-    if (!s) return false;
+    if (!s || !this.owned.has(skinId)) return false;
     this.equipped[s.weapon] = s.id;
-    try { localStorage.setItem(KEY, JSON.stringify(this.equipped)); } catch { /* */ }
+    this.persist();
     return true;
+  }
+  buy(skinId: string): boolean {
+    const skin = skinById(skinId);
+    if (!skin || skin.pattern === 'default' || this.owned.has(skinId)) return false;
+    const price = skinPrice(skin);
+    if (this.credits < price) return false;
+    this.credits -= price;
+    this.owned.add(skinId);
+    this.persist();
+    return true;
+  }
+  isOwned(skinId: string) { return this.owned.has(skinId); }
+  private persist() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(this.equipped));
+      localStorage.setItem(OWNED_KEY, JSON.stringify([...this.owned]));
+      localStorage.setItem(WALLET_KEY, String(this.credits));
+    } catch { /* local storage may be unavailable */ }
   }
 }
 export const skinManager = new SkinManager();

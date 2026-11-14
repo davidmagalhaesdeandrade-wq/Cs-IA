@@ -17,6 +17,8 @@ const FRICTION = 5.2;
 const STOP_SPEED = 2.0;
 
 export class PlayerController {
+  adminFly = false;
+  adminNoclip = false;
   a: Actor;
   s: GameSession;
   zoom = 0; // 0 none, 1, 2
@@ -171,24 +173,32 @@ export class PlayerController {
         v.x += wish.x * acc; v.z += wish.z * acc;
       }
     }
-    v.y -= GRAVITY * dt;
-    if (!a.onGround) this.fallSpeed = Math.max(this.fallSpeed, -v.y);
+    const verticalInput = moveEnabled ? (input.down('Space') ? 1 : input.down('ControlLeft') || input.down('ControlRight') ? -1 : 0) : 0;
+    v.y -= this.adminFly || this.adminNoclip ? 0 : GRAVITY * dt;
+    if (!a.onGround && !this.adminFly && !this.adminNoclip) this.fallSpeed = Math.max(this.fallSpeed, -v.y);
     const body = { pos: a.pos, vel: v, radius: a.radius, height: a.height, onGround: a.onGround };
     const preY = a.pos.y;
-    s.collision.move(body, dt);
-    a.onGround = body.onGround;
-    // landing
-    if (a.onGround && !this.wasGround) {
-      const impact = this.fallSpeed;
-      if (impact > 3) {
-        s.viewmodel.landVel -= Math.min(0.6, impact * 0.06);
-        this.landDip = Math.min(0.12, impact * 0.012);
-        audio.land(Math.min(1, impact / 8));
+    if (this.adminNoclip) {
+      if (wish.lengthSq() > 0) a.pos.addScaledVector(wish, maxSpeed * 1.25 * dt);
+      a.pos.y += verticalInput * maxSpeed * 1.15 * dt;
+      v.set(0, 0, 0); a.onGround = false; this.fallSpeed = 0;
+    } else {
+      s.collision.move(body, dt);
+      a.onGround = body.onGround;
+      if (this.adminFly) { a.pos.y += verticalInput * maxSpeed * 1.15 * dt; v.y = 0; }
+      // landing
+      if (a.onGround && !this.wasGround) {
+        const impact = this.fallSpeed;
+        if (impact > 3) {
+          s.viewmodel.landVel -= Math.min(0.6, impact * 0.06);
+          this.landDip = Math.min(0.12, impact * 0.012);
+          audio.land(Math.min(1, impact / 8));
+        }
+        if (impact > 13) s.damage(a, a, Math.round((impact - 13) * 9), 0, 'world', null, a.pos);
+        this.fallSpeed = 0;
       }
-      if (impact > 13) s.damage(a, a, Math.round((impact - 13) * 9), 0, 'world', null, a.pos);
-      this.fallSpeed = 0;
+      this.wasGround = a.onGround;
     }
-    this.wasGround = a.onGround;
     // eye smoothing on steps
     const eyeTarget = a.pos.y + a.eye;
     const stepped = a.pos.y - preY;
