@@ -11,6 +11,8 @@ export interface SkinDef {
   desc: string;
 }
 
+import { authUser } from '../core/Auth';
+
 export const RARITY_COLOR: Record<Rarity, string> = {
   consumer: '#b0c3d9', industrial: '#5e98d9', milspec: '#4b69ff', restricted: '#8847ff',
   classified: '#d32ce6', covert: '#eb4b4b', gold: '#e4ae39'
@@ -120,6 +122,18 @@ class SkinManager {
   equipped: Record<string, string> = {};
   owned = new Set<string>();
   credits = 30_000;
+  serverPrices: Record<string, number> = {};
+  private serverInventory = false;
+  lastError = '';
+  get isServerSynced() { return this.serverInventory; }
+  resetForGuest() {
+    this.serverInventory = false;
+    this.owned = new Set(SKINS.filter((s) => s.pattern === 'default').map((s) => s.id));
+    this.equipped = {};
+    this.credits = 30_000;
+    this.serverPrices = {};
+    this.persist();
+  }
   constructor() {
     this.owned = new Set(SKINS.filter((s) => s.pattern === 'default').map((s) => s.id));
     try {
@@ -142,20 +156,57 @@ class SkinManager {
     if (id && skinById(id)?.weapon === weapon) return id;
     return `${weapon}_default`;
   }
+  async syncFromServer(): Promise<boolean> {
+    if (!authUser()) { this.serverInventory = false; return false; }
+    try {
+      const response = await fetch('/.netlify/functions/inventory', { credentials: 'same-origin', cache: 'no-store' });
+      if (!response.ok) throw new Error('Inventário indisponível.');
+      const data = await response.json() as { credits: number; owned: { skin_id: string }[]; equipped: { weapon: string; skin_id: string }[]; catalog: { id: string; price: number }[] };
+      this.owned = new Set(SKINS.filter((s) => s.pattern === 'default').map((s) => s.id));
+      for (const item of data.owned) if (skinById(item.skin_id)) this.owned.add(item.skin_id);
+      this.equipped = {};
+      for (const item of data.equipped) if (skinById(item.skin_id)?.weapon === item.weapon) this.equipped[item.weapon] = item.skin_id;
+      this.credits = Math.max(0, Number(data.credits) || 0);
+      this.serverPrices = Object.fromEntries((data.catalog || []).map((item) => [item.id, item.price]));
+      this.serverInventory = true;
+      this.persist();
+      return true;
+    } catch (error) {
+      this.serverInventory = false;
+      throw error;
+    }
+  }
   pattern(weapon: string): Pattern {
     const s = skinById(this.get(weapon));
     return s ? s.pattern : 'default';
   }
-  equip(skinId: string): boolean {
+  async equip(skinId: string): Promise<boolean> {
     const s = skinById(skinId);
     if (!s || !this.owned.has(skinId)) return false;
+    if (authUser()) {
+      if (!this.serverInventory) return false;
+      const response = await fetch('/.netlify/functions/inventory', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'equip', skinId }) });
+      if (!response.ok) { this.lastError = (await response.json().catch(() => ({}))).error || 'Não foi possível equipar.'; return false; }
+      const data = await response.json();
+      this.applyServerSnapshot(data);
+      return true;
+    }
     this.equipped[s.weapon] = s.id;
     this.persist();
     return true;
   }
-  buy(skinId: string): boolean {
+  async buy(skinId: string): Promise<boolean> {
     const skin = skinById(skinId);
     if (!skin || skin.pattern === 'default' || this.owned.has(skinId)) return false;
+    if (!authUser()) { this.lastError = 'Entre em uma conta para comprar e sincronizar skins.'; return false; }
+    if (authUser()) {
+      if (!this.serverInventory) { this.lastError = 'Aguarde a sincronização do inventário da conta e tente novamente.'; return false; }
+      const response = await fetch('/.netlify/functions/inventory', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'purchase', skinId }) });
+      if (!response.ok) { this.lastError = (await response.json().catch(() => ({}))).error || 'Não foi possível comprar.'; return false; }
+      const data = await response.json();
+      this.applyServerSnapshot(data);
+      return true;
+    }
     const price = skinPrice(skin);
     if (this.credits < price) return false;
     this.credits -= price;
@@ -164,6 +215,17 @@ class SkinManager {
     return true;
   }
   isOwned(skinId: string) { return this.owned.has(skinId); }
+  price(skin: SkinDef) { return this.serverInventory && Number.isFinite(this.serverPrices[skin.id]) ? this.serverPrices[skin.id] : skinPrice(skin); }
+  private applyServerSnapshot(data: { credits: number; owned: { skin_id: string }[]; equipped: { weapon: string; skin_id: string }[]; catalog: { id: string; price: number }[] }) {
+    this.owned = new Set(SKINS.filter((s) => s.pattern === 'default').map((s) => s.id));
+    for (const item of data.owned) if (skinById(item.skin_id)) this.owned.add(item.skin_id);
+    this.equipped = {};
+    for (const item of data.equipped) if (skinById(item.skin_id)?.weapon === item.weapon) this.equipped[item.weapon] = item.skin_id;
+    this.credits = Math.max(0, Number(data.credits) || 0);
+    this.serverPrices = Object.fromEntries((data.catalog || []).map((item) => [item.id, item.price]));
+    this.serverInventory = true;
+    this.persist();
+  }
   private persist() {
     try {
       localStorage.setItem(KEY, JSON.stringify(this.equipped));

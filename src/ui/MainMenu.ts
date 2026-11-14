@@ -214,7 +214,11 @@ export class MainMenu {
     else if (where === 'store') this.screen = new InventoryScreen(host, () => this.closeScreen(true), () => { this.refreshWeapon(); }, 'store');
     else if (where === 'loadout') this.screen = new LoadoutScreen(host, () => this.closeScreen(true), () => this.refreshAgent());
     else if (where === 'settings') this.screen = new SettingsPanel(host, () => this.closeScreen(true));
-    else if (where === 'account') this.screen = new AuthScreen(host, () => this.closeScreen(true), () => this.closeScreen(true));
+    else if (where === 'account') this.screen = new AuthScreen(host, () => this.closeScreen(true), (user) => {
+      if (!user) skinManager.resetForGuest();
+      this.closeScreen(true);
+      if (user) void skinManager.syncFromServer().then(() => this.render()).catch((error) => console.warn('Inventory sync unavailable:', error));
+    });
     else if (where === 'admin' && authUser()?.role === 'admin') this.screen = new AdminPanel(host, () => this.closeScreen(true));
     else if (where === 'quit') this.quit(host);
   }

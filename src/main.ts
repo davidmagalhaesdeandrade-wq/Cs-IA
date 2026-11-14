@@ -9,6 +9,7 @@ import { mapArt, MAPS } from './ui/MapSelect';
 import { el } from './core/util';
 import { refreshAuth, authUser } from './core/Auth';
 import { AdminPanel } from './ui/AdminPanel';
+import { skinManager } from './data/skins';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const uiRoot = document.getElementById('ui') as HTMLDivElement;
@@ -50,7 +51,11 @@ let session: GameSession | null = null;
 let lastCfg: MatchConfig | null = null;
 
 const menu = new MainMenu(renderer, uiRoot, (cfg) => startMatch(cfg));
-void refreshAuth().then(() => menu.render());
+void refreshAuth().then(async () => {
+  if (authUser()) await skinManager.syncFromServer().catch((error) => console.warn('Inventory sync unavailable:', error));
+  else skinManager.resetForGuest();
+  menu.render();
+});
 applyRenderSettings();
 settings.onChange(applyRenderSettings);
 window.addEventListener('resize', () => { applyRenderSettings(); session?.resize(); });
@@ -155,7 +160,18 @@ function openAdminPanel(resumeAfter = !!session && !session.paused) {
   adminPanel = new AdminPanel(uiRoot, () => {
     adminPanel?.destroy(); adminPanel = null;
     if (resumeAfter && session?.paused) session.resume();
-  }, (action) => session?.setPracticePower(action), () => !!session && session.state === 'playing');
+  }, (action) => {
+    if (action.startsWith('bots:')) session?.setBotSize(Number(action.split(':')[1]) as 1 | 3 | 5);
+    else if (action.startsWith('difficulty:')) session?.setBotDifficulty(action.split(':')[1] as any);
+    else if (action === 'restart') session?.onExit('restart');
+    else if (action === 'end') session?.onExit('menu');
+    else session?.setPracticePower(action);
+  }, () => !!session && session.state === 'playing', (action) => {
+    if (action.startsWith('bots:')) session?.setBotSize(Number(action.split(':')[1]) as 1 | 3 | 5);
+    else if (action.startsWith('difficulty:')) session?.setBotDifficulty(action.split(':')[1] as any);
+    else if (action === 'restart') session?.onExit('restart');
+    else if (action === 'end') session?.onExit('menu');
+  }, () => !!session && session.state !== 'ended', () => session ? { size: session.config.size, difficulty: session.config.difficulty } : null);
   return true;
 }
 

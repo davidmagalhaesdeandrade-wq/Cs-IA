@@ -3,7 +3,7 @@ import { Dust2Map } from '../world/Dust2';
 import { CollisionWorld } from '../world/Collision';
 import { Nav } from '../world/Nav';
 import { Actor, Team, WeaponInst, HitGroup } from './Actor';
-import { Bot, Difficulty, pickName } from './Bot';
+import { Bot, Difficulty, DIFF, pickName } from './Bot';
 import { Match } from './Match';
 import { Effects } from './Effects';
 import { Grenades } from './Grenades';
@@ -272,6 +272,7 @@ export class GameSession {
     for (const d of this.drops) this.scene.remove(d.mesh);
     this.drops = [];
     this.grenades.clear();
+    this.reconcileLocalBots();
     const tsp = shuffle(this.map.tSpawns.slice()), ctsp = shuffle(this.map.ctSpawns.slice());
     let ti = 0, ci = 0;
     for (const a of this.actors) {
@@ -658,6 +659,40 @@ export class GameSession {
     this.pc.adminNoclip = this.practicePowers.has('noclip');
     if (!this.practicePowers.has('wall-vision')) this.xrayEl.replaceChildren();
     this.hud.notice(`${power.toUpperCase()}: ${this.practicePowers.has(power) ? 'ATIVADO' : 'DESATIVADO'} · PRÁTICA LOCAL`);
+  }
+
+  setBotDifficulty(difficulty: Difficulty) {
+    if (!DIFF[difficulty]) return false;
+    this.config.difficulty = difficulty;
+    for (const bot of this.bots) bot.p = DIFF[difficulty];
+    this.hud.notice(`DIFICULDADE DOS BOTS: ${difficulty.toUpperCase()}`);
+    return true;
+  }
+
+  setBotSize(size: 1 | 3 | 5) {
+    if (![1, 3, 5].includes(size)) return false;
+    this.config.size = size;
+    this.hud.notice(`TAMANHO DA PARTIDA: ${size}v${size} · BOTS AJUSTADOS NO PRÓXIMO ROUND`);
+    return true;
+  }
+
+  private reconcileLocalBots() {
+    const used = new Set(this.bots.map((bot) => bot.a.name));
+    const enemyTeam: Team = this.player.team === 'T' ? 'CT' : 'T';
+    for (const team of ['T', 'CT'] as Team[]) {
+      const desired = team === enemyTeam ? this.config.size : this.config.size - 1;
+      let members = this.bots.filter((bot) => bot.a.team === team);
+      while (members.length > desired) {
+        const bot = members.pop()!;
+        this.scene.remove(bot.a.model?.root!);
+        this.actors = this.actors.filter((actor) => actor !== bot.a);
+        this.bots = this.bots.filter((entry) => entry !== bot);
+      }
+      while (members.length < desired) {
+        this.addBot(team, used);
+        members = this.bots.filter((bot) => bot.a.team === team);
+      }
+    }
   }
 
   private updatePractice(dt: number) {

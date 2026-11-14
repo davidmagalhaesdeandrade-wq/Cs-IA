@@ -657,6 +657,10 @@ kbd { display: inline-block; min-width: 40px; padding: 3px 10px; background: #2a
 .admin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .admin-actions button { padding: 12px 14px; border: 1px solid var(--line); background: #252c36; font-size: 11px; letter-spacing: .5px; }
 .admin-actions button.active { color: #141414; background: var(--accent); }
+.admin-card label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 14px 0 0; color: var(--mut); font-size: 11px; }
+.admin-card select { padding: 9px 12px; color: #fff; background: #111720; border: 1px solid var(--line); }
+.admin-table td button { padding: 7px 9px; border: 1px solid var(--line); color: #fff; background: #252c36; font-size: 10px; white-space: nowrap; }
+.admin-table td button:hover { border-color: var(--accent); }
 .admin-denied { width: min(420px,100%); padding: 30px; background: #171c23; border: 1px solid var(--line); }
 .admin-denied p { margin: 12px 0; color: var(--mut); }
 .admin-denied button { padding: 9px 16px; border: 1px solid var(--line); }
