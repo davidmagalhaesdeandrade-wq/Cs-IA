@@ -151,6 +151,9 @@ export class GameSession {
         <button data-touch-key="ControlLeft" aria-label="Agachar">⌄</button>
         <button data-touch-key="KeyR" aria-label="Recarregar">R</button>
         <button data-touch-key="KeyF" aria-label="Inspecionar">F</button>
+        <button data-touch-key="KeyE" aria-label="Interagir">E</button>
+        <button data-touch-key="Escape" aria-label="Pausar">Ⅱ</button>
+        <button data-touch-mouse="2" aria-label="Mira secundária">AIM</button>
         <button data-touch-mouse="0" class="touch-fire" aria-label="Atirar">FIRE</button>
       </div>`);
     this.ui.appendChild(root);
