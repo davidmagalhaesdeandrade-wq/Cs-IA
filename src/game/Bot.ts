@@ -333,7 +333,27 @@ export class Bot {
     if (!this.lastKnown) { this.setState('hold'); return; }
     this.setState('seekEnemy');
     this.seekT = 6;
-    this.navigateTo(this.lastKnown, 0.2);
+    const peek = this.findPeekPoint(this.lastKnown);
+    this.navigateTo(peek || this.lastKnown, 0.2);
+  }
+
+  /** Choose a nearby walkable angle that opens line of sight to the last enemy position. */
+  private findPeekPoint(target: THREE.Vector3): THREE.Vector3 | null {
+    const [cx, cz] = this.s.map.worldToCell(target);
+    const targetEye = target.clone().add(new THREE.Vector3(0, 1.25, 0));
+    let best: THREE.Vector3 | null = null;
+    let bestDistance = Infinity;
+    for (let k = 0; k < 24; k++) {
+      const p = this.s.nav.randomCellNear(cx, cz, 3 + (k % 2));
+      if (!p) continue;
+      const distance = p.distanceTo(target);
+      if (distance < 4 || distance > 13 || distance >= bestDistance) continue;
+      const eye = p.clone().add(new THREE.Vector3(0, 1.5, 0));
+      if (!this.s.collision.lineOfSight(eye, targetEye)) continue;
+      best = p;
+      bestDistance = distance;
+    }
+    return best;
   }
 
   private findCover(t: Actor): boolean {
