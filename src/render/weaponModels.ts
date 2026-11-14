@@ -280,6 +280,9 @@ function buildAWP(m: Mats, ssg = false) {
   C(g, ssg ? 0.01 : 0.013, 0.62, m.metal, 0, 0.042, -0.52);
   if (!ssg) R(g, 0.036, 0.032, 0.09, m.dark, 0, 0.042, -0.86);
   else C(g, 0.012, 0.05, m.dark, 0, 0.042, -0.85);
+  // Scope rail and mounting blocks keep the optic integrated with the receiver.
+  topRail(g, m, -0.17, 0.09, 0.064, 0.04, 7);
+  receiverPins(g, m, 0.03 * s, -0.01, [-0.14, 0.12]);
   // scope
   C(g, 0.019, 0.3, m.dark, 0, 0.118, -0.05);
   C(g, 0.034, 0.1, m.dark, 0, 0.118, -0.24, 'z', 0.02);
@@ -321,8 +324,11 @@ function buildPistol(m: Mats, kind: 'glock' | 'usps' | 'deagle') {
   B(slide, 0.006, 0.01, 0.008, m.dark, 0, big ? 0.028 : 0.022, -len / 2 + 0.01);
   B(slide, 0.018, 0.01, 0.008, m.dark, 0, big ? 0.028 : 0.022, len / 2 - 0.01);
   if (big) B(slide, 0.02, 0.012, len - 0.02, m.receiver, 0, 0.026, 0);
-  B(slide, 0.012, 0.009, 0.008, m.dark, 0, big ? 0.049 : 0.04, -len / 2 + 0.012); // front sight
-  B(slide, 0.014, 0.008, 0.01, m.dark, 0, big ? 0.049 : 0.04, len / 2 - 0.012); // rear notch
+  B(slide, 0.012, 0.009, 0.008, m.dark, 0, big ? 0.03 : 0.024, -len / 2 + 0.012); // front sight
+  B(slide, 0.014, 0.008, 0.01, m.dark, 0, big ? 0.03 : 0.024, len / 2 - 0.012); // rear notch
+  const guard = new THREE.Mesh(new THREE.TorusGeometry(0.023, 0.003, 6, 14), m.dark);
+  add(g, guard, 0, -0.006, 0.002, 0, Math.PI / 2, 0); // trigger guard
+  B(g, 0.006, 0.018, 0.008, m.metal, 0, -0.008, -0.002); // trigger
   slide.position.set(0, big ? 0.05 : 0.045, -len / 2 + 0.03);
   g.add(slide);
   R(g, big ? 0.032 : 0.028, 0.026, len * 0.9, m.furniture === m.dark ? m.dark : (big ? m.dark : m.furniture), 0, big ? 0.015 : 0.016, -len / 2 + 0.035);
@@ -429,6 +435,12 @@ function buildSMG(m: Mats, kind: 'mac10' | 'mp9' | 'p90') {
     R(g, 0.05, 0.03, 0.3, m.glass, 0, 0.07, -0.02, 0, 0, 0, 'mag');
     C(g, 0.011, 0.1, m.metal, 0, 0.02, -0.25);
     R(g, 0.03, 0.03, 0.06, m.dark, 0, 0.1, -0.1);
+    B(g, 0.012, 0.018, 0.012, m.dark, 0, 0.116, -0.22); // front sight
+    B(g, 0.014, 0.02, 0.012, m.dark, 0, 0.116, 0.245); // rear sight
+    for (const x of [-1, 1]) {
+      for (let i = 0; i < 5; i++) B(g, 0.006, 0.024, 0.014, m.dark, x * 0.062, 0.005, -0.12 + i * 0.045);
+      for (const z of [-0.14, 0.14]) C(g, 0.004, 0.003, m.metal, x * 0.062, -0.005, z, 'x', undefined, 8);
+    }
     B(g, 0.036, 0.09, 0.08, m.dark, 0, -0.07, 0.0);
     muzzle(g, 0, 0.02, -0.3);
     support(g, 0, -0.04, -0.15);
@@ -487,10 +499,14 @@ function buildNova(m: Mats) {
   R(g, 0.05, 0.07, 0.3, m.receiver, 0, 0.01, -0.05);
   C(g, 0.014, 0.5, m.metal, 0, 0.03, -0.45);
   C(g, 0.014, 0.42, m.dark, 0, -0.005, -0.4);
+  C(g, 0.016, 0.018, m.metal, 0, 0.03, -0.63); // barrel clamp
   const pump = R(g, 0.05, 0.05, 0.18, m.furniture, 0, -0.005, -0.38);
   pump.name = 'mag';
+  for (let i = 0; i < 3; i++) B(g, 0.042, 0.003, 0.006, m.dark, 0, 0.023, -0.44 + i * 0.06); // pump ribs
   R(g, 0.034, 0.1, 0.045, m.furniture, 0, -0.065, 0.07, -0.35);
   R(g, 0.046, 0.09, 0.3, m.furniture, 0, -0.03, 0.26, 0.1);
+  B(g, 0.012, 0.012, 0.012, m.metal, 0, 0.05, -0.69); // front bead
+  receiverPins(g, m, 0.026, 0.01, [-0.12, 0.02]);
   muzzle(g, 0, 0.03, -0.71);
   support(g, 0, -0.03, -0.38);
   return g;
