@@ -196,7 +196,13 @@ export class CharacterModel {
       mid.position.y = -UP_ARM;
       root.add(mid);
       mesh(cap(0.047, LOW_ARM - 0.12), shirt, mid, 0, -LOW_ARM / 2 + 0.02, 0);
-      mesh(new THREE.SphereGeometry(0.048, 10, 8), gloves, mid, 0, -LOW_ARM + 0.04, 0).scale.set(0.9, 1.2, 1.1);
+      const palm = mesh(new THREE.SphereGeometry(0.043, 12, 10), gloves, mid, 0, -LOW_ARM + 0.04, -0.006);
+      palm.scale.set(0.92, 1.12, 1.08);
+      for (let i = 0; i < 4; i++) {
+        const finger = mesh(cap(0.008, 0.035), gloves, mid, -0.025 + i * 0.017, -LOW_ARM - 0.005, -0.035, Math.PI / 2);
+        finger.scale.set(0.9, 1, 0.9);
+      }
+      mesh(cap(0.009, 0.038), gloves, mid, -0.045, -LOW_ARM + 0.045, -0.012, 0.35, 0, -0.85);
       return { root, mid };
     };
     this.armL = mkArm(-1);
