@@ -659,7 +659,7 @@ export class GameSession {
     const touchMode = this.touchControls !== null;
     const lookOK = (input.locked || touchMode) && !this.buyMenu.open;
     this.lockEl.style.display = !input.locked && !touchMode && !this.buyMenu.open ? 'flex' : 'none';
-    this.pc.update(dt, lookOK, !this.buyMenu.open || true);
+    this.pc.update(dt, lookOK, !this.buyMenu.open);
     if (this.player.flash > 0) this.player.flash -= dt;
     for (const b of this.bots) b.update(dt);
     // dead bodies
